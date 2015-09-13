@@ -1,0 +1,57 @@
+---
+layout: layout
+title: Index
+permalink: index.html
+---
+.blue
+  .info-table
+    .left
+      %p
+        <strong>Syberia</strong> is a framework for quickly trying different methods in data science.  Syberia supports building, debugging, testing, and deploying classifiers developed in R.
+      %p
+        Syberia includes support for importing data, preparing data, multiple statistical modeling methodologies, exporting trained classifiers, validating the results, and deploying as a REST service.
+      %p
+      %p{align: "center"}
+        %button{:id => "start_button", :class => "btn btn-primary btn-large", :type => "submit"}
+          Get Started With Syberia
+    .right
+      %iframe{:allowscriptaccess => "always", :allowFullScreen => "true", :frameborder => "0", :height => "370", :src => "https://www.youtube.com/embed/tt2AYafET68", :title => "YouTube video player", :width => "550"}
+
+
+#start
+  .page
+    %h1 Getting Started
+    %p
+      Syberia files are created via a <a href="http://yeoman.io/">Yeoman</a> generator.  To install Syberia, install Yeoman and the generator. 
+    %pre 
+      = preserve do
+        :escaped
+          brew install npm
+          npm install -g yo
+          npm install -g generator-syberia
+    %p
+      Now we can start creating a model!  Let's try to predict the chances of surviving the sinking of the RMS Titanic, via <a href="https://www.kaggle.com/c/titanic-gettingStarted">the Kaggle dataset</a>.
+    %pre 
+      = preserve do
+        :escaped
+          mkdir titanic
+          cd titanic
+          yo syberia
+    %p
+      To predict, we have to make a model.  We can do that with Yeoman.
+    %pre
+      = preserve do
+        :escaped
+          yo syberia:model
+    %p
+      We now have to write the model.  Let's do that real quickly.
+      {models/dev/titanic/titanic.R}
+      {Need to write a classifier?}
+
+
+:javascript
+  $("#start_button").click(function() {
+    $('html,body').animate({
+      scrollTop: $("#start").offset().top},
+    'slow');
+  });
