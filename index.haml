@@ -19,31 +19,25 @@ permalink: index.html
   .page
     %h1 Getting Started
     %p
-      Syberia files are created via a <a href="http://yeoman.io/">Yeoman</a> generator.  To install Syberia, install Yeoman and the generator. 
+      Installation instructions go here.  Installation instructions go here.
     %pre 
       = preserve do
         :escaped
-          brew install npm
-          npm install -g yo
-          npm install -g generator-syberia
+          install.packages("devtools")
+          # Replace with actual code
+          devtools::install_github("syberia")
+          syberia::install_syberia()
     %p
       Now we can start creating a model!  Let's try to predict the chances of surviving the sinking of the RMS Titanic, via <a href="https://www.kaggle.com/c/titanic-gettingStarted">the Kaggle dataset</a>.
     %pre 
       = preserve do
         :escaped
+          #TODO: ensure they're in the base directory
+          cd models/dev
           mkdir titanic
           cd titanic
-          yo syberia
+          #TODO: `yo syberia` or however we make the intial model file?
     %p
-      To predict, we have to make a model.  We can do that with Yeoman.
-    %pre
-      = preserve do
-        :escaped
-          yo syberia:model
-    %p
-      We now have to write the model.  Let's do that real quickly.
-      {models/dev/titanic/titanic.R}
-      {Need to write a classifier?}
 
 
 :javascript
