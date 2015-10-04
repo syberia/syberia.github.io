@@ -14,38 +14,4 @@ permalink: index.html
     %p
       Syberia makes it easy to <strong>quickly clean up messy data</strong>, build <strong>produciton-ready predictive models</strong>, and quickly <strong>skip past the boring stuff and onto the interesting data analysis.</strong>
     %p{align: "center"}
-      %button{:id => "start_button", :class => "btn btn-primary btn-large", :type => "submit"}
-        Get Started With Syberia
-
-#start
-  .page
-    %h1 Getting Started
-    %p
-      Installation instructions go here.  Installation instructions go here.
-    %pre{class: "prettyprint "}
-      = preserve do
-        :escaped
-          install.packages("devtools")
-          # Replace with actual code
-          devtools::install_github("syberia")
-          syberia::install_syberia()
-    %p
-      Now we can start creating a model!  Let's try to predict the chances of surviving the sinking of the RMS Titanic, via <a href="https://www.kaggle.com/c/titanic-gettingStarted">the Kaggle dataset</a>.
-    %pre{class: "prettyprint "}
-      = preserve do
-        :escaped
-          #TODO: ensure they're in the base directory
-          cd models/dev
-          mkdir titanic
-          cd titanic
-          #TODO: `yo syberia` or however we make the intial model file?
-    %p
-      Etc. More instructions helping them build the complete Titanic model... Blah.
-
-
-:javascript
-  $("#start_button").click(function() {
-    $('html,body').animate({
-      scrollTop: $("#start").offset().top},
-    'slow');
-  });
+      <a href="getting-started.html" class="btn btn-primary btn-large" role="button">Getting Started With Syberia</a>

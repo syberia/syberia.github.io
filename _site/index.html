@@ -11,14 +11,14 @@
 <body>
   <div class='nav'>
     <div class='logo'>
-      [LOGO]
+      <a href="index.html">[LOGO]</a>
     </div>
     <div class='links'>
-      <a href="index.html#start">Get Started</a>
-      <a href="#">About</a>
-      <a href="#">Docs</a>
-      <a href="#">Support</a>
-      <a href="#">Contribute</a>
+      <a href="getting-started.html">Get Started</a>
+      <a href="about.html">About</a>
+      <a href="community.html">Community</a>
+      <a href="docs.html">Docs</a>
+      <a href="contribute.html">Contribute</a>
     </div>
   </div>
 </body>
@@ -37,33 +37,8 @@
       Syberia makes it easy to <strong>quickly clean up messy data</strong>, build <strong>produciton-ready predictive models</strong>, and quickly <strong>skip past the boring stuff and onto the interesting data analysis.</strong>
     </p>
     <p align='center'>
-      <button class='btn btn-primary btn-large' id='start_button' type='submit'>
-        Get Started With Syberia
-      </button>
+      <a href="getting-started.html" class="btn btn-primary btn-large" role="button">Getting Started With Syberia</a>
     </p>
   </div>
 </div>
-<div id='start'>
-  <div class='page'>
-    <h1>Getting Started</h1>
-    <p>
-      Installation instructions go here.  Installation instructions go here.
-    </p>
-    <pre class='prettyprint '>install.packages(&quot;devtools&quot;)&#x000A;# Replace with actual code&#x000A;devtools::install_github(&quot;syberia&quot;)&#x000A;syberia::install_syberia()</pre>
-    <p>
-      Now we can start creating a model!  Let's try to predict the chances of surviving the sinking of the RMS Titanic, via <a href="https://www.kaggle.com/c/titanic-gettingStarted">the Kaggle dataset</a>.
-    </p>
-    <pre class='prettyprint '>#TODO: ensure they're in the base directory&#x000A;cd models/dev&#x000A;mkdir titanic&#x000A;cd titanic&#x000A;#TODO: `yo syberia` or however we make the intial model file?</pre>
-    <p>
-      Etc. More instructions helping them build the complete Titanic model... Blah.
-    </p>
-  </div>
-</div>
-<script>
-  $("#start_button").click(function() {
-    $('html,body').animate({
-      scrollTop: $("#start").offset().top},
-    'slow');
-  });
-</script>
 

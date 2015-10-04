@@ -1,0 +1,29 @@
+---
+layout: layout
+title: Getting Started
+permalink: getting-started.html
+---
+
+.page
+  %h1 Getting Started
+  %p
+    Installation instructions go here.  Installation instructions go here.
+  %pre{class: "prettyprint "}
+    = preserve do
+      :escaped
+        install.packages("devtools")
+        # Replace with actual code
+        devtools::install_github("syberia")
+        syberia::install_syberia()
+  %p
+    Now we can start creating a model!  Let's try to predict the chances of surviving the sinking of the RMS Titanic, via <a href="https://www.kaggle.com/c/titanic-gettingStarted">the Kaggle dataset</a>.
+  %pre{class: "prettyprint "}
+    = preserve do
+      :escaped
+        #TODO: ensure they're in the base directory
+        cd models/dev
+        mkdir titanic
+        cd titanic
+        #TODO: `yo syberia` or however we make the intial model file?
+  %p
+    Etc. More instructions helping them build the complete Titanic model... Blah.
