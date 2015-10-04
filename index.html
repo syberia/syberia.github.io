@@ -4,25 +4,37 @@
   </title>
   <link href='css/style.css' rel='stylesheet' type='text/css'>
   <link href='css/bootstrap.min.css' rel='stylesheet' type='text/css'>
+  <link href='css/google-code-prettify/prettify.css' rel='stylesheet' type='text/css'>
   <script src='js/jquery-1.11.2.min.js'></script>
+  <script src='css/google-code-prettify/run_prettify.js'></script>
 </head>
 <body>
-  <div class='logo-tagline'>
+  <div class='nav'>
     <div class='logo'>
       [LOGO]
+    </div>
+    <div class='links'>
+      <a href="index.html#start">Get Started</a>
+      <a href="#">About</a>
+      <a href="#">Docs</a>
+      <a href="#">Support</a>
+      <a href="#">Contribute</a>
     </div>
   </div>
 </body>
 <div class='blue'>
   <div class='info-table'>
-    <h1 align='center'>
+    <h2 align='center'>
       Build predictive models faster than ever before.
-    </h1>
+    </h2>
     <p>
-      <strong>Syberia</strong> is a framework for quickly trying different methods in data science.  Syberia supports building, debugging, testing, and deploying classifiers developed in R.
+      <strong>Syberia</strong> is a framework for quickly trying different methods in data science.
     </p>
     <p>
-      Syberia includes support for importing data, preparing data, multiple statistical modeling methodologies, exporting trained classifiers, validating the results, and deploying as a REST service.  Syberia makes it easy to <strong>quickly clean up messy data</strong>, build <strong>produciton-ready predictive models</strong>, and quickly <strong>skip past the boring stuff and onto the interesting data analysis.</strong>
+      Syberia supports building, debugging, testing, and deploying classifiers developed in R.  It includes support for <a href="#">importing data</a>, <a href="#">cleaning/transforming data</a>, <a href="#">fitting models to data</a>, <a href="#">validating the results</a>, and <a href="#">deployment as a REST service</a>.
+    </p>
+    <p>
+      Syberia makes it easy to <strong>quickly clean up messy data</strong>, build <strong>produciton-ready predictive models</strong>, and quickly <strong>skip past the boring stuff and onto the interesting data analysis.</strong>
     </p>
     <p align='center'>
       <button class='btn btn-primary btn-large' id='start_button' type='submit'>
@@ -37,12 +49,14 @@
     <p>
       Installation instructions go here.  Installation instructions go here.
     </p>
-    <pre>install.packages(&quot;devtools&quot;)&#x000A;# Replace with actual code&#x000A;devtools::install_github(&quot;syberia&quot;)&#x000A;syberia::install_syberia()</pre>
+    <pre class='prettyprint '>install.packages(&quot;devtools&quot;)&#x000A;# Replace with actual code&#x000A;devtools::install_github(&quot;syberia&quot;)&#x000A;syberia::install_syberia()</pre>
     <p>
       Now we can start creating a model!  Let's try to predict the chances of surviving the sinking of the RMS Titanic, via <a href="https://www.kaggle.com/c/titanic-gettingStarted">the Kaggle dataset</a>.
     </p>
-    <pre>#TODO: ensure they're in the base directory&#x000A;cd models/dev&#x000A;mkdir titanic&#x000A;cd titanic&#x000A;#TODO: `yo syberia` or however we make the intial model file?</pre>
-    <p></p>
+    <pre class='prettyprint '>#TODO: ensure they're in the base directory&#x000A;cd models/dev&#x000A;mkdir titanic&#x000A;cd titanic&#x000A;#TODO: `yo syberia` or however we make the intial model file?</pre>
+    <p>
+      Etc. More instructions helping them build the complete Titanic model... Blah.
+    </p>
   </div>
 </div>
 <script>

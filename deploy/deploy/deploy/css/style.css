@@ -11,24 +11,18 @@
 p { font-size: 120%; }
 h1 { padding: 20px; }
 
-.nav {
+.logo-tagline {
   font-weight: bold;
   width: 70%;
-  margin-top: 40px;
+  margin: 40px auto;
 }
-.nav .logo {
-  float: left;
-  margin-left: 80px;
+.logo-tagline .logo {
   font-size: 250%;
   padding: 10px;
 }
-.nav .links {
-  margin-left: 350px;
-  font-size: 120%;
+.logo-tagline .tagline {
+  font-size: 150%;
   padding: 10px;
-}
-.nav .links a {
-  padding: 15px;
 }
 
 .blue {
@@ -36,15 +30,20 @@ h1 { padding: 20px; }
   background-color: #E0FFFF
 }
 .blue .info-table {
-  width: 60%;
+  width: 70%;
   margin: 40px auto;
   padding: 35px;
   line-height: 150%;
 }
-.blue .info-table p {
-  line-height: 160%;
-  padding: 10px;
+.blue .info-table p { padding: 10px; }
+.blue .info-table .left {
+  float: left;
+  width: 300px;
 }
+.blue .info-table .right {
+  margin-left: 350px;
+}
+
 
 .page {
   width: 70%;
