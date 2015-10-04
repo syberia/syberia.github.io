@@ -5,6 +5,7 @@
 ## This is done from the `source` branch to the `master` branch.
 
 rm -rf deploy/*
+jekyll build
 cp -r _site/* deploy/.
 cd deploy
 git add .
