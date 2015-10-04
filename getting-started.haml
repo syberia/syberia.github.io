@@ -6,15 +6,18 @@ permalink: getting-started.html
 
 .page
   %h1 Getting Started
+  %h3 Installation
   %p
-    Installation instructions go here.  Installation instructions go here.
+    To install Syberia, open up an R console and type the following:
   %pre{class: "prettyprint "}
     = preserve do
       :escaped
         install.packages("devtools")
-        # Replace with actual code
-        devtools::install_github("syberia")
-        syberia::install_syberia()
+        devtools::install_github('robertzk/syberia@install')
+        syberia.io::install_syberia()
+        library(syberia)
+
+  %h3 Creating the Model File
   %p
     Now we can start creating a model!  Let's try to predict the chances of surviving the sinking of the RMS Titanic, via <a href="https://www.kaggle.com/c/titanic-gettingStarted">the Kaggle dataset</a>.
   %pre{class: "prettyprint "}

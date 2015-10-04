@@ -10,6 +10,7 @@
 }
 p { font-size: 120%; }
 h1 { padding: 20px; }
+h3 { padding: 20px 0px 10px 0px; }
 
 .nav {
   font-weight: bold;
