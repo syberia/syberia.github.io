@@ -12,10 +12,20 @@ permalink: getting-started.html
   %pre{class: "prettyprint "}
     = preserve do
       :escaped
-        install.packages("devtools")
-        devtools::install_github('robertzk/syberia@install')
+        devtools::install_github("robertzk/syberia@install")
         syberia.io::install_syberia()
         library(syberia)
+
+
+  %h3 Hello World!
+  %p
+    Let's start with an example model.
+  %pre{class: "prettyprint "}
+    = preserve do
+      :escaped
+        syberia_create("myproject")
+        run("example")
+
 
   %h3 Creating the Model File
   %p
@@ -23,10 +33,6 @@ permalink: getting-started.html
   %pre{class: "prettyprint "}
     = preserve do
       :escaped
-        #TODO: ensure they're in the base directory
-        cd models/dev
-        mkdir titanic
-        cd titanic
-        #TODO: `yo syberia` or however we make the intial model file?
+        dir.create("models/dev/titanic")
   %p
     Etc. More instructions helping them build the complete Titanic model... Blah.
