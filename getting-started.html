@@ -29,12 +29,17 @@
   <p>
     To install Syberia, open up an R console and type the following:
   </p>
-  <pre class='prettyprint '>install.packages(&quot;devtools&quot;)&#x000A;devtools::install_github('robertzk/syberia@install')&#x000A;syberia.io::install_syberia()&#x000A;library(syberia)</pre>
+  <pre class='prettyprint '>devtools::install_github(&quot;robertzk/syberia@install&quot;)&#x000A;syberia.io::install_syberia()&#x000A;library(syberia)</pre>
+  <h3>Hello World!</h3>
+  <p>
+    Let's start with an example model.
+  </p>
+  <pre class='prettyprint '>syberia_create(&quot;myproject&quot;)&#x000A;run(&quot;example&quot;)</pre>
   <h3>Creating the Model File</h3>
   <p>
     Now we can start creating a model!  Let's try to predict the chances of surviving the sinking of the RMS Titanic, via <a href="https://www.kaggle.com/c/titanic-gettingStarted">the Kaggle dataset</a>.
   </p>
-  <pre class='prettyprint '>#TODO: ensure they're in the base directory&#x000A;cd models/dev&#x000A;mkdir titanic&#x000A;cd titanic&#x000A;#TODO: `yo syberia` or however we make the intial model file?</pre>
+  <pre class='prettyprint '>dir.create(&quot;models/dev/titanic&quot;)</pre>
   <p>
     Etc. More instructions helping them build the complete Titanic model... Blah.
   </p>
