@@ -1,7 +1,23 @@
 body {
-  background-color: #000;
-  font-family: arial;
+  margin: 0;
+  padding: 0;
+  background-color: #fff;
+  font-family: "proxima-nova" arial;
   text-align: center;
+}
+
+div.backdrop {
+  margin: 0;
+  padding: 0;
+
+  background: rgba(25,31,36,1);
+  background: -moz-linear-gradient(top, rgba(25,31,36,1) 0%, rgba(43,53,61,1) 100%);
+  background: -webkit-gradient(left top, left bottom, color-stop(0%, rgba(25,31,36,1)), color-stop(100%, rgba(43,53,61,1)));
+  background: -webkit-linear-gradient(top, rgba(25,31,36,1) 0%, rgba(43,53,61,1) 100%);
+  background: -o-linear-gradient(top, rgba(25,31,36,1) 0%, rgba(43,53,61,1) 100%);
+  background: -ms-linear-gradient(top, rgba(25,31,36,1) 0%, rgba(43,53,61,1) 100%);
+  background: linear-gradient(to bottom, rgba(25,31,36,1) 0%, rgba(43,53,61,1) 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#191f24', endColorstr='#2b353d', GradientType=0 );
 }
 
 div.logo {
@@ -32,17 +48,17 @@ h3 {
   color: #fff;
 }
 
-p, ul {
+div.backdrop p, div.backdrop ul {
   font-size: 18px;
   line-height: 24px;
   color: #b6c2cf;
 }
 
-ul {
+div.backdrop ul {
   padding-left: 0;
 }
 
-ul li {
+div.backdrop ul li {
   padding-bottom: 18px;
   list-style: none;
   font-style: italic;
@@ -54,7 +70,9 @@ div.centergroup {
 }
 
 div.centercontent {
+  margin: 0 auto;
   width: 530px;
+  padding-bottom: 150px;
   text-align: left;
 }
 
@@ -108,5 +126,58 @@ a > div.button {
 a:hover > div.button {
   background-color: #2f6ba3;
 }
+
+div.footer {
+  width: 1000px;
+  margin: 0 auto;
+  color: #8f99a4;
+  text-align: left;
+  padding-bottom: 100px;
+}
+
+div.footer p {
+  font-size: 14px;
+  line-height: 18px;
+}
+
+h4 {
+  letter-spacing: 1px;
+  font-size: 14px;
+}
+
+div.footer-left {
+  display: inline-block;
+  width: 260px;
+  padding-left: 60px;
+}
+
+div.footer-center {
+  display: inline-block;
+  width: 260px;
+  padding-left: 60px;
+}
+
+div.footer-right {
+  display: inline-block;
+  width: 260px;
+  padding-left: 80px;
+  position: relative;
+  top: 25px;
+}
+
+div.footer-right a {
+  text-decoration: none;
+  color: #3d8bd2;
+  font-style: normal;
+}
+
+div.footer-right ul {
+  padding-left: 0;
+  padding-bottom: 18px;
+  list-style: none;
+  line-height: 25px;
+  font-style: italic;
+}
+
 
 
