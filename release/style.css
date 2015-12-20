@@ -74,9 +74,11 @@ h1 {
   font-weight: 600;
   color: #fff;
   font-size: 36px;
+  margin: 0;
 }
 
 h2 {
+  margin-top: 18px;
   font-weight: 400;
   font-size: 24px;
   color: #b6c2cf;
