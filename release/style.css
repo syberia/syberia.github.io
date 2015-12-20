@@ -67,7 +67,7 @@ div.logo {
   width: 56px;
   color: #3d8bd2;
   font-size: 48px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 h1 {
@@ -85,6 +85,11 @@ h2 {
 h3 {
   font-size: 24px;
   color: #fff;
+  margin-bottom: 0;
+}
+
+div.centergroup p {
+  margin: 8px 0 0 0;
 }
 
 div.centergroup p, div.centergroup ul {
@@ -111,7 +116,7 @@ div.centergroup {
 div.centercontent {
   margin: 0 auto;
   width: 530px;
-  padding-bottom: 150px;
+  padding-bottom: 100px;
   text-align: left;
 }
 
@@ -171,7 +176,11 @@ div.footer {
   margin: 0 auto;
   color: #8f99a4;
   text-align: left;
-  padding-bottom: 100px;
+  padding: 0;
+  padding-bottom: 60px;
+  font-weight: 300;
+  position: relative;
+  top: -40px;
 }
 
 div.footer p {
@@ -201,12 +210,13 @@ div.footer-right {
   width: 260px;
   padding-left: 80px;
   position: relative;
-  top: 25px;
+  top: 17px;
 }
 
 div.footer-right a {
   text-decoration: none;
   color: #3d8bd2;
+  font-size: 14px;
   font-style: normal;
 }
 
@@ -214,9 +224,7 @@ div.footer-right ul {
   padding-left: 0;
   padding-bottom: 18px;
   list-style: none;
-  line-height: 25px;
+  line-height: 22px;
   font-style: italic;
 }
-
-
 
