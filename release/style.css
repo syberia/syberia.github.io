@@ -1,0 +1,112 @@
+body {
+  background-color: #000;
+  font-family: arial;
+  text-align: center;
+}
+
+div.logo {
+  margin: 0 auto;
+  border-radius: 8px;
+  border: 3px solid #3d8bd2;
+  padding: 17px;
+  width: 64px;
+  color: #3d8bd2;
+  font-size: 48px;
+  font-weight: semibold;
+}
+
+h1 {
+  font-weight: semibold;
+  color: #fff;
+  font-size: 36px;
+}
+
+h2 {
+  font-weight: regular;
+  font-size: 24px;
+  color: #b6c2cf;
+}
+
+h3 {
+  font-size: 24px;
+  color: #fff;
+}
+
+p, ul {
+  font-size: 18px;
+  line-height: 24px;
+  color: #b6c2cf;
+}
+
+ul {
+  padding-left: 0;
+}
+
+ul li {
+  padding-bottom: 18px;
+  list-style: none;
+  font-style: italic;
+}
+
+div.centergroup {
+  margin: 100px auto;
+  width: 1000px;
+}
+
+div.centercontent {
+  width: 530px;
+  text-align: left;
+}
+
+div.screenshot {
+  width: 590px;
+  height: 360px;
+  background-color: #b6c2cf;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+div.padding-right-75 {
+  padding-right: 75px;
+}
+
+div.padding-left-75 {
+  padding-left: 75px;
+}
+
+div.label {
+  display: inline-block;
+  text-align: left;
+  position: relative;
+  top: -120px;
+  width: 275px;
+}
+
+div.buttongroup {
+  margin: 0 auto;
+  width: 100%;
+}
+
+div.button {
+  display: inline-block;
+  margin: 0 7px;
+  font-size: 18px;
+  width: 160px;
+  height: 32px;
+  padding-top: 12px;
+  vertical-align: center;
+  text-align: center;
+  border-radius: 6px;
+  background-color: #3d8bd2;
+  color: #fff;
+}
+
+a > div.button {
+  text-decoration: none;
+}
+
+a:hover > div.button {
+  background-color: #2f6ba3;
+}
+
+
