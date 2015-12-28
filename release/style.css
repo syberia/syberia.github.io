@@ -230,3 +230,51 @@ div.footer-right ul {
   font-style: italic;
 }
 
+.colmask {
+  position:relative;  /* This fixes the IE7 overflow hidden bug */
+  clear:both;
+  float:left;
+  width:100%;     /* width of whole page */
+  overflow:hidden;    /* This chops off any overhanging divs */
+}
+.colright,
+.colmid,
+.colleft {
+  float:left;
+  width:100%;
+  position:relative;
+}
+.col1,
+.col2,
+.col3 {
+  float:left;
+  position:relative;
+  padding:0 0 1em 0;
+  overflow:hidden;
+}
+.leftmenu {
+  background:#fff;    /* right column background colour */
+}
+.leftmenu .colleft {
+  right:75%;      /* right column width */
+  background:#f4f4f4; /* left column background colour */
+}
+.leftmenu .col1 {
+  width:71%;      /* right column content width */
+  left:102%;      /* 100% plus left column left padding */
+}
+.leftmenu .col2 {
+  width:21%;      /* left column content width (column width minus left and right padding) */
+  left:6%;      /* (right column left and right padding) plus (left column left padding) */
+}
+.col1 h1 {
+  font-weight: 600;
+  color: #000;
+  font-size: 36px;
+  margin-bottom: 0;
+}
+code {
+  margin-left: 20px;
+  text-align: left;
+  font-size: 110%;
+}
