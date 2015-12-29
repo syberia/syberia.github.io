@@ -1,0 +1,12 @@
+#!/usr/bin/ruby
+
+header = File.read("release/docs/_header.html")
+footer = File.read("release/docs/_footer.html")
+puts "Generating documents for syberia.github.io..."
+Dir["release/docs/template-*.html"].each do |template|
+  File.open(new_template = template.sub("template-", ""), "w") do |f|
+    puts "  Writing \033[32m#{new_template}\033[39m from template..."
+    f.write(header + File.read(template) + footer)
+  end
+end
+
