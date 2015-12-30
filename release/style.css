@@ -305,3 +305,8 @@ code {
   padding-left: 30px !important;
   font-size: 110%;
 }
+
+pre.inline {
+  display: inline-block;
+}
+
