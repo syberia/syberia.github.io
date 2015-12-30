@@ -283,6 +283,21 @@ div.footer-right ul {
   font-size: 36px;
   margin-bottom: 0;
 }
+
+div.code.shell {
+  background-color: rgb(25,31,36);
+  border-radius: 10px;
+  color: #eee;
+  padding: 1.5em 2em 1em 2em;
+  margin: 0;
+}
+
+div.code.shell pre {
+  margin: 0;
+  padding: 0;
+}
+
+
 code {
   margin-left: 20px;
   text-align: left;
