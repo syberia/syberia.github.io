@@ -250,6 +250,10 @@ div.footer-right ul {
   font-weight: 600;
 }
 
+.colmask h2 {
+  color: #000;
+}
+
 .colright,
 .colmid,
 .colleft {
