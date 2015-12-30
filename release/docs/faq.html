@@ -54,10 +54,15 @@ quickly.</p>
 promise that putting syntax <i>first</i>, like a mathematician, will lead
 to great things. There is a good reason why the 
 <a href="http://andrewgelman.com/2015/03/25/define-first-prove-later/">definitions are hard</a>
-and the theorems are easy. Solve the problem of fitting thousands of 
-models to radically different academic and business questions with a
-succint high-level parametrization of the full modeling process, and
-we promise &#9835;Big Data&#9835; will be an easy final step.</p> 
+and the theorems are easy. Solve the problem of fitting and daily re-deploying
+thousands of feature engineering pipelines and ML models in response to radically
+different academic and business questions with a
+succint high-level parametrization of the full modeling process while
+maintaining full end-to-end testability, modularity, continuous integration,
+and zero-code deployment over every model you have ever experimentally created, and
+we promise that &#9835;Big Data&#9835; will be an easy final step.</p> 
+
+<p>Otherwise we'll give you your money back.</p>
 
 <br />
 <p>
@@ -65,6 +70,48 @@ we promise &#9835;Big Data&#9835; will be an easy final step.</p>
     <iframe width="420" height="315" src="https://www.youtube.com/embed/fULNUr0rvEc" frameborder="0" allowfullscreen></iframe>
   </center>
 </p>
+
+<br />
+
+<h2>How do I deploy my model?</h2>
+
+<p>This is a question for your devops engineer. While we are not ready to share
+our solutions to these problems, there are plenty of approaches already. The
+Syberia modeling engine builds you a model object that is easily 
+<a target="_new" href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/readRDS.html">serializable</a>.
+If you can park it on some persistent storage and read it in dynamically, just
+write a 10-line web server that takes a JSON hash of the rawest, messiest
+production data you can give it, turns it into a 1-row data.frame (don't forget
+to let <b>mungebits</b> do all the hard munging work to avoid hardcoding in
+aspects of the feature engineering process), and calls</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+send_back_json_response(list(score = model$predict(one_row_of_data)))
+    </code>
+  </pre>
+</div>
+
+<p>You can use <a href="https://github.com/robertzk/microserver">microserver</a>,
+<a href="https://rforge.net/Rserve/">Rserve</a>, or bake the R run-time into
+a simple C server. The sky is the limit. <a href="https://github.com/docker/docker">Docker</a>
+might help.</p>
+
+<h2>But R is slow</h2>
+
+<p>That's not a question. Syberia's original use case was to deploy very complicated
+topologies of models, with one feeding into another which ensembles with a third
+which finally feeds into a fourth, and deploying the solution without having to
+write a single extra line of code. If you can't tolerate a couple dozen milliseconds
+of latency, or a couple hundred for the more complex data science products,
+then I guess you have no recourse but to re-write your hard work in C.</p>
+
+<p>Alternatively, you could transpile the current modeling engine DSL to C just-in-time.</p>
+
+<p>This is actually not that hard. You'll get to keep your fast iteration speed but 
+the recipe requires a few C gurus to maintain the mapping.</p>
+
 
 
         </div>
