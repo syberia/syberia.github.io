@@ -250,7 +250,7 @@ div.footer-right ul {
 .colmid,
 .colleft {
   float:left;
-  width:100%;
+  width:70%;
   position:relative;
   text-align: left;
 }
@@ -266,7 +266,7 @@ div.footer-right ul {
   background:#fff;    /* right column background colour */
 }
 .leftmenu .colleft {
-  right:75%;      /* right column width */
+  right:45%;      /* right column width */
   background:#f4f4f4; /* left column background colour */
 }
 .leftmenu .col1 {
