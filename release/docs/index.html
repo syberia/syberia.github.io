@@ -48,6 +48,9 @@ list(
 
   data = list(
     "Factor to character"  = list(column_transformation(as.character), is.factor)
+    # One line per feature engineering step seems undue, but it's for a good cause:
+    # commenting out to try with and without a step is trivial, and as the 
+    # parametrization grows longer it's a clear indication you need a new mungebit!
   , "fare_title"           = list(multi_column_transformation(function(title, fare) { ave(fare, title, FUN = mean) }), c("title", "fare"), "title_fare")
   , "Name length variable" = list(new_variable, function(name) nchar(name), "name_length")
   , "Set factors"          = list(column_transformation(factor), c("sex", "embarked"))
