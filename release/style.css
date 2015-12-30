@@ -241,6 +241,10 @@ div.footer-right ul {
   overflow:hidden;    /* This chops off any overhanging divs */
 }
 
+.colmask p, .colmask li {
+  line-height: 24px;
+}
+
 .colmask a {
   color: rgb(25,31,36);
   font-weight: 600;
@@ -308,5 +312,6 @@ code {
 
 pre.inline {
   display: inline-block;
+  margin: 0;
 }
 
