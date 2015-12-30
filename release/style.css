@@ -231,18 +231,28 @@ div.footer-right ul {
 }
 
 .colmask {
+  font-family: 'Roboto', Helvetica, sans-serif;
+  font-weight: 300;
+
   position:relative;  /* This fixes the IE7 overflow hidden bug */
   clear:both;
   float:left;
   width:100%;     /* width of whole page */
   overflow:hidden;    /* This chops off any overhanging divs */
 }
+
+.colmask a {
+  color: rgb(25,31,36);
+  font-weight: 600;
+}
+
 .colright,
 .colmid,
 .colleft {
   float:left;
   width:100%;
   position:relative;
+  text-align: left;
 }
 .col1,
 .col2,
@@ -276,5 +286,7 @@ div.footer-right ul {
 code {
   margin-left: 20px;
   text-align: left;
+  border-radius: 15px;
+  padding-left: 30px !important;
   font-size: 110%;
 }

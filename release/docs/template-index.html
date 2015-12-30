@@ -2,41 +2,82 @@
 
         <p>Let's get you up and running with Syberia!</p>
 
-        <p>Here's what Syberia code might look like:</p>
+        <p>Before we get started, let's take a look at what a classifier might
+           look like using the Syberia modeling engine:</p>
         <div class="code">
           <pre>
             <code class="R"><span class="spacer">
-#' Build a model using a data source from scratch.
-#'
-#' @param key a string or list. If the former, there must be a
-#'   file with name \code{model_stages} followed by \code{.r} so that syberia
-#'   can read the model configurations.
-#' @param ... additional arguments to pass to \code{$run(...)} on the stageRunner.
-#'   For example, \code{to = 'some/key'}.
-#' @param fresh logical. Whether or not to use the cache. By default, \code{FALSE}.
-#' @param params list. Inject parameters into \code{modelenv}. You will have to implement
-#'   the handling of those parameters yourself.
-#'   For example, \code{run('some_file', params=list(invalidate_cache = TRUE))}.
-#' @param verbose logical. Whether or not to display messages. The default is
-#'   \code{TRUE}.
-#' @export
-run_model <- function(key = syberiaStructure:::get_cache('last_model') %||%
-                      getOption('syberia.default_model'),
-                      ..., fresh = FALSE, verbose = TRUE, params = list()) {
-  # TODO: (RK) Remove this hack.
-  if (file.exists(file.path(syberia_root(), 'config', 'routes.R'))) {
-    # A director project!
-    project <- syberia_project(syberia_root())
-    if (missing(key)) key <- syberiaStructure:::get_cache('last_model')
-    if (!is.character(key)) stop("No model executed.", call. = FALSE)
-    keys <- project$find(key, base = 'models/')
-    if (length(keys) == 0) stop("No model ", sQuote(key),
-        " found in syberia project ", sQuote(project$root()), call. = FALSE)
-    stagerunner <- project$resource(keys[1])$value()
-    syberiaStructure:::set_cache(key, 'last_model')
-    syberiaStructure:::set_cache(stagerunner, 'last_stagerunner')
-    output <- stagerunner$run(..., verbose = verbose)
-    syberiaStructure:::set_cache(output, 'last_run')
-    return(output)
-}
+list(
+  import = list(
+    # For this simple example, we'll use Kaggle's example Titanic data set.
+    url = "https://raw.githubusercontent.com/haven-jeon/introduction_to_most_usable_pkgs_in_project/master/bicdata/data/titanic.csv"
+  ),
+
+  data = list(
+    "Factor to character"  = list(column_transformation(as.character), is.factor)
+  , "fare_title"           = list(multi_column_transformation(function(title, fare) { ave(fare, title, FUN = mean) }), c("title", "fare"), "title_fare")
+  , "Name length variable" = list(new_variable, function(name) nchar(name), "name_length")
+  , "Set factors"          = list(column_transformation(factor), c("sex", "embarked"))
+  , "Restore levels"       = list(restore_categorical_variables)
+  , "Rename dep_var"       = list(renamer, c("survived" = "dep_var"))
+  ),
+
+  model = list(
+      "gbm"
+    , .id_var             = "X"
+    , distribution        = "bernoulli"
+    , number_of_trees     = 3000
+    , shrinkage_factor    = 0.005
+    , depth               = 5
+    , min_observations    = 6
+    , train_fraction      = 1
+    , bag_fraction        = 0.5
+    , cv                  = TRUE
+    , cv_folds            = 5
+    , number_of_cores     = 4
+    , perf_method         = "cv"
+    , prediction_type     = "response"
+  ),
+
+  export = list(
+    R    = "titanic_model"         # Export the model object to a global variable.
+# , s3   = "some/path/titanic-1"   # It's also possible to export to Amazon's S3. 
+# , file = "~/some/path/titanic-1" # Or a file...
+                                   # Or any other custom export format you define.
+  )
+)
             </span></code>
+          </pre>
+        </div>
+
+        <p>This incredibly simple example showcases the primary principle behind
+           the Syberia approach to modeling. Instead of separating the modeling
+           process into a collection of scripts, every model constructed in
+           Syberia should take raw production data to a complete ready-to-deploy
+           object in an easily readable short format that describes the
+           most important components of the modeling process.</p>
+
+        <p>Behind the scenes, Syberia constructs an object that allows you to
+           "roll back" to earlier points in time without repeating previous steps
+           in case something went wrong, such as when you're debugging or testing
+           your feature engineering. Keeping track of temporary variables and re-importing
+           when you made a mistake can be a cumbersome component of a script-driven
+           or notebook-driven workflow.</p>
+
+        <p>With Syberia, the approach to modeling is the same as the software
+           engineering approach to development: your work should be testable, modular,
+           and each component you build should have a clear purpose. In the example
+           above, we will see how the high-level file is an end-to-end parametrization
+           of the modeling process that breaks down to constructs like I/O adapters,
+           feature engineering <strong>mungebits</strong>, exportable classifiers,
+           and re-runnable stagerunners that achieve a space/time tradeoff to allow
+           you to quickly roll back to halfway through your workflow and experiment
+           with different parameters.</p>
+
+      <h1>Recommended Next Steps</h1>
+
+      <ul>
+        <li><a href="download.html">Download and Setup</a></li>
+        <li><a href="usage.html">Basic Usage</a></li>
+        <li><a href="101.html">Syberia Modeling 101</a></li>
+      </ul>
