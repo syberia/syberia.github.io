@@ -7,29 +7,30 @@
         <div class="code">
           <pre>
             <code class="R"><span class="spacer">
-list(
+list( # R's a LISP, so we represent the modeling process with a list. :)
   import = list(
     # For this simple example, we'll use Kaggle's example Titanic data set.
     url = "https://raw.githubusercontent.com/haven-jeon/introduction_to_most_usable_pkgs_in_project/master/bicdata/data/titanic.csv"
-  ),
+  ), # You can use a variety of data import adapters, like csv or AWS's S3.
 
   data = list(
     "Factor to character"  = list(column_transformation(as.character), is.factor)
-    # One line per feature engineering step seems undue, but it's for a good cause:
-    # commenting out to try with and without a step is trivial, and as the 
-    # parametrization grows longer it's a clear indication you need a new mungebit!
+    # One line per feature engineering step seems undue, but it's for a
+    # good cause: commenting out to try with and without a step is trivial,
+    # and as the parametrization grows longer it's a clear indication
+    # you need a new mungebit!
   , "fare_title"           = list(multi_column_transformation(function(title, fare) { ave(fare, title, FUN = mean) }), c("title", "fare"), "title_fare")
   , "Name length variable" = list(new_variable, function(name) nchar(name), "name_length")
   , "Set factors"          = list(column_transformation(factor), c("sex", "embarked"))
   , "Restore levels"       = list(restore_categorical_variables)
   , "Rename dep_var"       = list(renamer, c("survived" = "dep_var"))
-  ),
+  ), # Giving a short summary of each step will come in handy later.
 
   model = list(
-      "gbm"
+      "gbm" # The name of our classifier. This is defined elsewhere.
     , .id_var             = "X"
-    , distribution        = "bernoulli"
-    , number_of_trees     = 3000
+    , distribution        = "bernoulli" # And some parameters.
+    , number_of_trees     = 3000        # Here we try a binary classification.
     , shrinkage_factor    = 0.005
     , depth               = 5
     , min_observations    = 6
@@ -42,11 +43,11 @@ list(
     , prediction_type     = "response"
   ),
 
-  export = list(
-    R    = "titanic_model"         # Export the model object to a global variable.
-# , s3   = "some/path/titanic-1"   # It's also possible to export to Amazon's S3. 
-# , file = "~/some/path/titanic-1" # Or a file...
-                                   # Or any other custom export format you define.
+  export = list( # Exporting the model is done in 1 line of code.
+    R    = "titanic_model"  # Export the model object to a global variable.
+# , s3   = "path/titanic"   # It's also possible to export to Amazon's S3. 
+# , file = "~/path/titanic" # Or a file...
+                            # Or any other custom export format you define.
   )
 )
             </span></code>
@@ -77,7 +78,8 @@ list(
            you to quickly roll back to halfway through your workflow and experiment
            with different parameters.</p>
 
-           <p>The current use case of Syberia is rapidly experimenting with different machine
+           <p>The current use case of Syberia is rapidly experimenting with different
+           feature engineering steps and machine
            learning classifiers and producing deployable model objects so that you do not have to recode
            your work into Python, Ruby, C++ or Java. Many statisticians and academics have
            worked hard to produce a flourishing ecosystem of statistical and machine learning
