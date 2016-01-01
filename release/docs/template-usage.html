@@ -1,0 +1,155 @@
+<h1>Usage</h1>
+
+<p>Ensure you have <a href="download.html">set up Syberia</a>
+prior to proceeding.</p>
+
+<p>Syberia is a meta-framework: it allows you to build <b>engines</b>
+which form the basis of your R projects. If your project consists
+primarily of machine learning projects you intend to push to a
+production system, use the
+<a target="_new" href="https://github.com/syberia/modeling.sy">modeling engine</a>.
+</p>
+
+<p>
+If it consists primarily of visualization dashboards, you will
+learn how to modularize your code to make the process of building
+dashboards faster and then pull it out into a dashboard engine 
+for future projects. Almost any project has abstractions lurking
+around the corner that will help you with similar future projects.
+</p>
+
+<p>Throughout this tutorial, we will focus our efforts on the <b>modeling engine</b>.</p>
+
+<h2>Running a model</h2>
+
+<p>Recall our command from earlier.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+run("example")
+    </code>
+  </pre>
+</div>
+
+<p>This command executed the <a target="_new" href="https://github.com/syberia/example.sy/blob/master/models/dev/example1.R">model file</a>
+"models/dev/example1":</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(
+  import = list(R = "iris"),
+  data   = list(
+    "Create dep var" = list(renamer, c("Sepal.Length" = "dep_var")),
+    "Create ID var"  = list(multi_column_transformation(seq_along), "dep_var", "id")
+  ),
+  model  = list("lm", .id_var = "id"),
+  export = list(R = "model")
+)
+    </code>
+  </pre>
+</div>
+
+<p>Let's briefly traverse through what happened:</p>
+
+<ol>
+  <li>
+    When the modeling engine loaded, it attached some
+    <a target="_new" href="https://github.com/syberia/modeling.sy/blob/master/config/global/modeling/modeling.R">global helpers</a>
+    through the <a target="_new" href="https://github.com/syberia/modeling.sy/blob/master/config/boot.R">boot file</a>
+    to make it easier to experiment in the console. One of these
+    was <code class="inline">run</code>.
+  </li>
+
+  <li>
+    The <code class="inline">run</code> function found the closest matching model,
+    in this case "models/dev/example1", using fuzzy matching (so <code class="inline">example</code>
+    really means the regular expression <code class="inline">.*e.*x.*a.*m.*p.*l.*e.*</code>, that
+    is, any instance of an "e" followed by some characters and then an "x" followed by
+    some letters and then an "a", etc.).
+  </li>
+
+  <li>
+    The underlying <code class="inline">syberia_engine</code> object "compiled" the resource.
+    Note the local variable <code class="inline">renamer</code> in the model file: it 
+    is not actually defined anywhere! As we'll see later, the models controller has injected
+    it for us. It is possible to define and parametrize new feature engineering on the fly
+    and the models controller will automatically inject your helpers. We'll go into
+    that and more on controllers down the road.
+  </li>
+  <li>
+    In this case, the final "compiled" resource is a 
+    <a target="_new" href="https://github.com/syberia/stagerunner">stagerunner</a>,
+    an object capable of tracking our progress in the modeling pipeline from start to finish.
+    If during later munging or model training we noticed a typo in the parameters to
+    <code class="inline">renamer</code>,
+    we could halt execution, fix the typo, and type <code class="inline">run(, "2/1")</code>,
+    meaning "re-run the first substage of the second stage of the last executed model." Then
+    we could finish the model using <code class="inline">run(, "2/2", "export")</code>
+    ("run from 'Create ID var' to 'export'") without losing our work or having to start
+    from scratch with the raw data. More on this later.
+  </li>
+  <li>
+    The compiled stagerunner is using a method called <code class="inline">$run</code> to
+    execute the stages we're asking for. The result of calling the method is a list of 
+    two environments, <code class="inline">before</code> and <code class="inline">after</code>,
+    one representing what existed prior to running the step and the other what the result
+    was afterward. Go ahead and try comparing <code class="inline">ls(run(, "2/1")$before$data)</code>
+    and <code class="inline">ls(run(, "2/1")$after$data)</code>. Do you notice the column
+    names changing? The modeling engine mounts shortcuts for inspecting data before and
+    after the last run, so this is equivalent to <code class="inline">ls(B)</code> and
+    <code class="inline">ls(A)</code>, respectively. Try it! Having easy interactive access
+    to the data before and after munging is intended to speed up the feature 
+    engineering inspection and debugging process, typically a cumbersome component of
+    data science.
+  </li>
+  <li>
+    The keys of the list, <code class="inline">c("import", "data", "model", "export")</code>,
+    were stitched together through <a target="_new" href="https://github.com/syberia/modeling.sy/tree/master/lib/stages">stages</a>
+    by the models controller. The modeling engine comes with those four pre-built stages
+    but it is trivial to extend them or define more if you're doing visualization, report generation,
+    more impressive ensemble or stack pipelines, and any other tasks. Under the hood,
+    think of the stagerunner as executing a chain of functions operating on a <b>context</b>,
+    a designated R environment object for playing with all the objects necessary to
+    complete the modeling process. Later, it will be possible to generalize the interactive
+    Syberia approach to arbitrary DAG (directed acyclic graph) runners.
+  </li>
+  <li>
+    After the run has completed, the last stage <code class="inline">export = list(R = "model")</code>
+    says "export the model to this R session" under the global variable <code class="inline">model</code>.
+    Both the import and export stages are fully customizable if we want to read the
+    data from or write the model to a variety of backends.
+  </li>
+</ol>
+
+<p>After running the model (i.e., the full modeling pipeline) we have a 
+ready-to-deploy model object. We call this
+object <b>deployable</b> because it has everything it needs to replicate both the
+feature engineering pipeline and the final score prediction on a single
+row of streaming data, and it is trivial to
+<a target="_new" href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/readRDS.html">serialize</a>.</p>
+
+<p>If the model was predicting the probability a user
+will click on a link from a very raw, unclean dataset, we could send the
+1-row dataset for a new user to a simple server that called <code class="inline">model$predict(one_row)</code>
+and returned the final score. The model object takes care of reproducing
+the entire data pipeline on the single row of data through <b>mungebits</b>.</p>
+
+<p>The end goal of the Syberia modeling engine is to make the process of building
+any model, no matter how complex or stacked or multi-staged, the rather trivial
+combination of pre-built modular units yielding an object that can execute the
+entire streaming prediction, from assembling raw data sets to producing final scores: 
+we want to see <a target="_new" href="https://cran.r-project.org/web/packages/available_packages_by_name.html">CRAN</a>
+come alive.</p>
+
+<h1>Next Steps</h1>
+
+<ul>
+  <li><a href="101.html">Syberia Modeling 101</a></li>
+  <li><a href="mungebits.html">Mungebits</a></li>
+  <li><a href="stagerunner.html">Stagerunner</a></li>
+  <li><a href="tundra.html">Model objects</a></li>
+  <li><a href="director.html">Controllers</a></li>
+</ul>;
+

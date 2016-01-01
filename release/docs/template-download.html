@@ -121,6 +121,29 @@ devtools::install_github("syberia/syberia@install")
   </pre>
 </div>
 
+<h1>Recommended Next Steps</h1>
+
+<ul>
+  <li><a href="usage.html">Basic Usage</a></li>
+  <li><a href="101.html">Syberia Modeling 101</a></li>
+</ul>
+
 <h1><a target="_new" name="trouble">Troubleshooting</a></h1>
 
-<p>If you're havin' trouble I feel bad for you son, I got 99 problems but Syberia ain't one.</p>
+<h2>Cannot open file '~/.R/lockbox/.staging/magrittr/R/magrittr.rdb': No such file or directory</h2>
+
+<p>This is an issue with <a href="https://github.com/robertzk/lockbox">lockbox</a> 
+on certain system configurations. Restarting R should fix the issue. Otherwise,
+try executing the following command from the terminal and then restarting R.
+(Make sure you are starting R from the root of the example project so that you
+load the necessary Rprofile.)</p>
+
+<br />
+<div class="code shell">
+  <pre>
+rm -rf ~/.R/lockbox/.staging
+  </pre>
+</div>
+
+<br />
+<br />

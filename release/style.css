@@ -314,7 +314,8 @@ code {
   font-size: 110%;
 }
 
-pre.inline {
+code.inline, pre.inline {
+  padding-left: 0px !important;
   display: inline-block;
   margin: 0;
 }
