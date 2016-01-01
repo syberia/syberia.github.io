@@ -132,7 +132,7 @@ row of streaming data, and it is trivial to
 
 <p>If the model was predicting the probability a user
 will click on a link from a very raw, unclean dataset, we could send the
-1-row dataset for a new user to a simple server that called <code class="inline">model$predict(one_row)</code>
+raw 1-row dataset for a new user to a simple server that called <code class="inline">model$predict(one_row)</code>
 and returned the final score. The model object takes care of reproducing
 the entire data pipeline on the single row of data through <b>mungebits</b>.</p>
 
