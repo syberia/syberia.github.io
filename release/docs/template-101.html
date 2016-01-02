@@ -298,8 +298,8 @@ the serialized object to a Mongo database.</p>
 list(
   import = list(database = list(table = "my_data")),
   data   = list(
-    "Sure indep screening"  = list(sis, pval_threshold = 0.05),
     "Aggregate time series" = list(aggregate_ts, vars = c("timevar1", "timevar2")),
+    "Sure indep screening"  = list(sis, pval_threshold = 0.05),
     "Principal components"  = list(pca, center = TRUE, scale = TRUE)
   ),
   model  = list("fancy_model", param1 = 0.7, param2 = "foo")
