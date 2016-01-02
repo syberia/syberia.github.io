@@ -260,6 +260,11 @@ div.footer-right ul {
   color: #000;
 }
 
+.colmask .img-right {
+  float: right;
+  padding: 30px;
+}
+
 .colright,
 .colmid,
 .colleft {
