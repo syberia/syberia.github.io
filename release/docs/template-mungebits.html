@@ -1,6 +1,6 @@
 <h1>Mungebits</h1>
 
-<p>Machine learning looks initially like the science of 
+<p>Machine learning looks at first glance like the science of 
 devising and answering pure statistical questions on real-life data sets.
 In practice, a lot of it ends up being
 <a target="_new" href="http://www.nytimes.com/2014/08/18/technology/for-big-data-scientists-hurdle-to-insights-is-janitor-work.html?_r=0">data janitor work</a>.
@@ -53,8 +53,95 @@ will be confused.</p>
   <img src="../../images/narrow_vs_wide.png" title="Narrow and Wide Transformations" />
 </div>
 
-<p>Operations that take one data.frame and return another data.frame come
+<p>Operations that take one <code class="inline">data.frame</code>
+and return another <code class="inline">data.frame</code> come
 in two types: <i>narrow</i> and <i>wide</i> transformations. You can
 delegate the <i>narrow</i> transformations to an ETL engineer or other
-data curation role. However, this might not be feasible, because they will
-have to provide a way to replicate their 
+data curation role. However, this might not be feasible if we are deploying
+a model, because they will have to provide a way to replicate their 
+process in real-time as well, for example through an API.
+
+<p>Narrow transformations, operations that can be done row-by-row without
+looking at the other rows, almost by definition do not need to store metadata to
+be reproduced on a single row. However, many of the most useful cleaning
+operations on a dataset&mdash;like sure independence screening, principal component
+analysis, imputation, discretization, aggregation and computation of ratios,
+numericalization of categorical features, and so on&mdash;are
+<b>wide</b> transformations.</p>
+
+<p>The abundance of useful wide transformations
+is the reason why <b>feature engineering cannot be separated from
+statistical modeling</b>. It is impossible to have one person's role
+be maintaining a data pipeline while another person independently maintains
+a statistical model without running into a
+<a target="_new" href="http://research.google.com/pubs/pub43146.html">messy combinatorial explosion</a>:
+they are inseparable aspects of the same task,
+in the same way database operations cannot be separated from a web
+application but instead compose its heart.</p>
+
+<p>Let's convince ourselves that this is true.</p>
+
+<h2>The Basic Mungebit</h2>
+
+<p>Every time you write a script that begins with <code class="inline">read.csv("data.csv")</code>
+and ends with a clean data set you have actually produced an
+<i>endomorphism on the space of dataframes</i>, that is, a function
+which takes one dataframe and yields another dataframe. Functions that
+have the same domain and co-domain are really cool because they can
+be <i>trivially composed</i>: if I have several such functions, I can just
+apply them one after the other without worrying about setting up a complex
+input/output graph since I know the input and the result will always be
+a dataframe. (For the mathematically inclined, endomorphisms of any space form
+a monoid under composition.)</p>
+
+<p>In algebra class we were able to prove beautiful facts about parabolas and
+the other conic sections because we looked at the most general cases, like
+<code class="inline">y = a * x^2 + b * x + c</code>. Here, <code class="inline">a</code>,
+<code class="inline">b</code>, and <code class="inline">c</code> are parameters:
+for any combination of such three constants drawn from the real numbers we
+get a different parabola.</p>
+
+<p>Parametrization is powerful because it means we don't have to repeat our
+work every time a special case comes along. Finding the quadratic equation can be
+done once; the other times we simply plug in the parameters! Every time you write
+the type of code below you are re-deriving the quadratic formula by hand.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# Uncomment the line below if you want to run this on an example.
+# raw_data <- data.frame(occupation = c("Doctor", rep("Waiter", 200)), stringsAsFactors = FALSE)
+raw_data$occupation <- ave(raw_data$occupation, raw_data$occupation, FUN = function(x) {
+  if (length(x) / NROW(raw_data) < 0.01) { # Percentage of population with this occupation.
+    "Other"
+  } else {
+    x[1L]
+  }
+})
+    </span></code>
+  </pre>
+</div>
+
+<p>If we later decide to perform the same operation on another variable, the path
+of lowest resistance will be copying the above and replacing "occupation" with
+the other variable name. If instead we had parametrized this as a function
+that took a dataset, the variables to alter, and minimal threshold for replacing
+the value with "Other," we could easily re-use it for a variety of datasets.</p>
+
+<p>What about when it comes time to replay the operation on a single row of data
+or a new validation set? <b>The above code won't run!</b> With a single row of
+data, all values will always have trivially 100% incidence and nothing will
+ever be replaced with "Other," which might lead to unexpected results
+when it comes to our classifier. Now imagine this problem amplified by
+100 more feature engineering steps on a dataset with 1000s of variables.
+This is why data cleaning is seen as a combinatorial nightmare.</p>
+
+<p>But it does not have to be. Mungebits solve this problem, and a proper
+generalization of mungebits solves any problem of taking raw, messy
+data sets, joining and munging them until there's a clean covariate matrix,
+and running a model&mdash;without having to ever write a custom data pipeline,
+instead making the process part of the explorative data science process.
+</p>
+
+
+
