@@ -67,7 +67,7 @@ be reproduced on a single row. However, many of the most useful cleaning
 operations on a dataset&mdash;like sure independence screening, principal component
 analysis, imputation, discretization, aggregation and computation of ratios,
 numericalization of categorical features, and so on&mdash;are
-<b>wide</b> transformations.</p>
+<i>wide</i> transformations.</p>
 
 <p>The abundance of useful wide transformations
 is the reason why <b>feature engineering cannot be separated from
@@ -125,7 +125,7 @@ raw_data$occupation <- ave(raw_data$occupation, raw_data$occupation, FUN = funct
 <p>If we later decide to perform the same operation on another variable, the path
 of lowest resistance will be copying the above and replacing "occupation" with
 the other variable name. If instead we had parametrized this as a function
-that took a dataset, the variables to alter, and minimal threshold for replacing
+that took a dataset, the variables to alter, and a minimal threshold for replacing
 the value with "Other," we could easily re-use it for a variety of datasets.</p>
 
 <p>What about when it comes time to replay the operation on a single row of data
