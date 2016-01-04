@@ -265,13 +265,13 @@ bit$train(iris[1, ])
 <p>Training a mungebit is like flipping a one-time switch: once
 we do it, we can't undo it; we would need a new fresh mungebit.
 This way, we can be sure that once we have fed in our initial training
-set, its specific characteristics will be used to replay the 
+set its specific characteristics will be used to replay the 
 feature engineering example as it happened.</p>
 
 <p>For example, if a rare
-value was on the border of the 0.01 threshold, certain subsamples
-of the training set might consider it "rare" and replaceable with
-"Other" whilst others do not. If we didn't have mungebits, we would
+value was on the border of the 0.01 threshold then certain subsamples
+of the training set might consider it rare and replaceable with
+"Other" whilst different subsamples do not. If we didn't have mungebits, we would
 need to write a separate data pipeline for each model as to be
 very careful about these sorts of edge cases. Incorrectly failing 
 to replace a value could lead to bizarre bugs in our classifier
@@ -286,6 +286,7 @@ valid.</p>
 <div class="code">
   <pre>
     <code class="R"><span class="spacer">
+# test/lib/mungebits/remove_uncommon_values.R
 test_that("it does not replace a common value", {
   bit <- resource()
   iris$Species <- as.character(iris$Species)
@@ -313,6 +314,7 @@ surprises if someone uses your code in a way you did not expect.</p>
 <div class="code">
   <pre>
     <code class="R"><span class="spacer">
+# Continued: test/lib/mungebits/remove_uncommon_values.R
 test_that("it replaces an uncommon value", {
   bit <- resource()
   iris$Species <- as.character(iris$Species)
@@ -392,9 +394,25 @@ on future changes to the code base. As the amount of code we write increases
 and the project becomes more complex, it will be harder and harder to track
 what everyone's assumptions are about the inputs and outputs to all the functions
 and resources used throughout the project. If someone ever fixes a bug or
-refactors something, having lots of tests means it will be very easy to tell
-if they broke something in the process.</p>
+refactors anything, having lots of tests means it will be very easy to tell
+if they broke something in the process. At
+<a target="_new" href="https://github.com/avantcredit">Avant</a> we have used
+this approach to create data science collaboration repositories with tens
+of thousands of commits, thousands of models, and dozens of collaborators
+without stumbling on complexity: tests pay off.</p>
 
+<h2>Next Steps</h2>
+
+Continue reading below for the more advanced thorough mungebits section,
+or proceed with stagerunners if you'd like the abbreviated tour.
+
+<ul>
+  <li><a href="stagerunner.html">Stagerunner</a></li>
+  <li><a href="tundra.html">Model objects</a></li>
+  <li><a href="director.html">Controllers</a></li>
+</ul>
+
+<h2>Advanced mungebits</h2>
 
 
         </div>
