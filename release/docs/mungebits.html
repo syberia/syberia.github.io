@@ -241,8 +241,7 @@ head(bit$run(iris, "Species"))
 <div class="code">
   <pre>
     <code class="R"><span class="spacer">
-iris[1, "Species"] <- "Bumblebee" # Restore the rare value.
-bit$run(iris[1, ], "Species")
+bit$run(iris[1, ], "Species") # We never modified iris.
 #   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
 # 1          5.1         3.5          1.4         0.2   Other
     </span></code>
@@ -274,19 +273,127 @@ value was on the border of the 0.01 threshold, certain subsamples
 of the training set might consider it "rare" and replaceable with
 "Other" whilst others do not. If we didn't have mungebits, we would
 need to write a separate data pipeline for each model as to be
-very careful about these sorts of edge cases. Instead, the unified
+very careful about these sorts of edge cases. Incorrectly failing 
+to replace a value could lead to bizarre bugs in our classifier
+when the column gets converted to a categorical feature. Instead, the unified
 <code class="inline">bit$run(...)</code> interface means the only
 time we will ever have to think about the train versus predict
 distinction is when we are writing our mungebit.</p>
 
+<p>Let's write some tests to convince ourselves our implementation is
+valid.</p>
 
-sets 
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+test_that("it does not replace a common value", {
+  bit <- resource()
+  iris$Species <- as.character(iris$Species)
+  # Test the mungebit when it is training.
+  expect_equal(as.character(bit$run(iris, "Species")[1, 5]), "setosa")
+  stopifnot(bit$trained())
+  # And when it is predicting.
+  expect_equal(as.character(bit$run(iris, "Species")[1, 5]), "setosa")
+})
+    </span></code>
+  </pre>
+</div>
 
+<p style="text-align: center">
+  <img src="../../images/mungebit_test_example.png" title="Mungebit Test Example" />
+</p>
 
+<p>Looking pretty good! Note we used <code class="inline">stest</code>, a helper
+provided by the Syberia modeling engine, to test our "resource", in this case the mungebit.</p>
 
+<p>The point of good tests is to anticipate not only the example for which you wrote
+the code, but every possible input anyone could ever throw at it, so there are no
+surprises if someone uses your code in a way you did not expect.</p>
 
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+test_that("it replaces an uncommon value", {
+  bit <- resource()
+  iris$Species <- as.character(iris$Species)
+  iris[1, 5] <- "Bumblebee"
+  expect_equal(bit$run(iris, "Species")[1, 5], "Other")
+  expect_equal(bit$run(iris, "Species")[1, 5], "Other")
+})
 
+test_that("it replaces a previously-unseen value", {
+  bit <- resource()
+  iris$Species <- as.character(iris$Species)
+  iris[1, 5] <- "Bumblebee"
+  expect_equal(bit$run(iris, "Species")[1, 5], "Other")
+  iris[1, 5] <- "Flubber"
+  expect_equal(bit$run(iris, "Species")[1, 5], "Other")
+})
+    </span></code>
+  </pre>
+</div>
 
+<p style="text-align: center">
+  <img src="../../images/mungebit_test_failure.png" title="Mungebit Test Failure" />
+</p>
+
+<p>Oh no! Our first <i>test failure</i>. Writing tests is about stepping outside
+of the box of how you think about the work you have written and considering every
+possible scenario for how other people may use it. In this case, if we had encountered
+a new data point with a value that was not observed during the training process,
+we would have failed to replace it with "Other" &mdash; even though its incidence
+in the original data was 0%!</p>
+
+<p>This is a very common oversight. While writing the original code, we assumed
+that we wish to replace values that are uncommon. We stored them for later
+so that we could repeat the same process when new data came in. However, we failed
+to take into account that future data could have an <i>infinite number of possible
+  values</i>. We should have instead stored the very finite list (by the pigeonhole principle,
+at most 100) of <i>common</i> values: those with incidence more than 1%.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# lib/mungebits/remove_uncommon_values.R
+train <- function(dataframe, variables, threshold = 0.01, replacement = "Other") {
+  common_values <- list()
+  for (v in variables) {
+    dataframe[[v]] <- ave(dataframe[[v]], dataframe[[v]], FUN = function(x) {
+      if (length(x) / NROW(dataframe) < threshold) {
+        "Other"
+      } else {
+        common_values[[v]] <<- c(common_values[[v]], x[1L])
+        x[1L]
+      }
+    })
+  }
+  input$common_values <- common_values
+  dataframe
+}
+
+predict <- function(dataframe, variables, threshold = 0.01, replacement = "Other") {
+  variables <- intersect(colnames(dataframe), variables)
+  for (v in names(input$common_values)) {
+    dataframe[[v]][!is.element(dataframe[[v]], input$common_values[[v]])] <- replacement
+  }
+  dataframe
+}
+    </span></code>
+  </pre>
+</div>
+
+<p style="text-align: center">
+  <img src="../../images/mungebit_test_fixed.png" title="Mungebit Test Fixed" />
+</p>
+
+<p>The more tests we write, the more <i>coverage</i> we have. You can think of
+test coverage (how much of your code is covered by test cases) as insurance
+on future changes to the code base. As the amount of code we write increases
+and the project becomes more complex, it will be harder and harder to track
+what everyone's assumptions are about the inputs and outputs to all the functions
+and resources used throughout the project. If someone ever fixes a bug or
+refactors something, having lots of tests means it will be very easy to tell
+if they broke something in the process.</p>
 
 
 
