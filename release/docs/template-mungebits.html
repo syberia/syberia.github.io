@@ -393,17 +393,17 @@ the R munging should give you a data pipeline for free.</p>
 package are:</p>
 
 <ul>
-  <li><p><a target="_new" href="https://github.com/syberia/mungebits2/tree/master/R/mungebit.R">Mungebit</a></li> R6 class.
-  A mungebit holds <code class="inline">c("train_function", "predict_function", "input")</code>,
+  <li><p><a target="_new" href="https://github.com/syberia/mungebits2/tree/master/R/mungebit.R">Mungebit</a> R6 class.
+  A mungebit has the members <code class="inline">c("train_function", "predict_function", "input")</code>,
   where the first two are both functions that take and return a dataframe (with possibly
   more parameters) and the last one is an environment object used by the train function
-  to record metadata required by the predict function.</a></p>
+  to store metadata required by the predict function.</a></p>
 
   <p>Mungebits are meant to record the most abstract feature cleaning and engineering
   ideas: filter irrelevant columns, replace values, convert to a categorical, discretize,
   impute, apply PCA, etc. They are connected to a <i>specific</i> dataset through a mungepiece.</li>
 
-  <li><a target="_new" href="https://github.com/syberia/mungebits2/tree/master/R/mungepiece.R">Mungepiece</a></li> R6 class.
+  <li><a target="_new" href="https://github.com/syberia/mungebits2/tree/master/R/mungepiece.R">Mungepiece</a> R6 class.
   While a mungebit is the abstract data cleaning or feature engineering step, a
   mungepiece records the parameters passed to the mungebit as applied to a specific
   dataset.</li>
@@ -416,5 +416,90 @@ package are:</p>
   or a new data record comes in through a streaming production system, the munge 
   procedure will replay the feature engineering to clean up the data.</li>
 </ul>   
+
+<p>Although the Syberia modeling engine gives you a syntax for creating
+mungepieces to include in your data preparation, let's see what the process
+would look like when performed by hand.</p>
+
+<p>We'll use Kaggle's Titanic data set.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+data <- read.csv(stringsAsFactors = FALSE, "https://raw.githubusercontent.com/haven-jeon/introduction_to_most_usable_pkgs_in_project/master/bicdata/data/titanic.csv")
+dim(data) # [1] 1309 15
+    </span></code>
+  </pre>
+</div>
+
+We see a variable called <code class="inline">home.dest</code> representing
+their home destination.
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+head(data$home.dest)
+# [1] "St Louis, MO"                    "Montreal, PQ / Chesterville, ON"
+# [3] "Montreal, PQ / Chesterville, ON" "Montreal, PQ / Chesterville, ON"
+# [5] "Montreal, PQ / Chesterville, ON" "New York, NY"
+    </span></code>
+  </pre>
+</div>
+
+We can extract their state into a separate feature using a simple heuristic:
+find two consecutive capital letters.
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+extract_state <- function(strings) {
+  has_state <- grepl("[A-Z]{2}", strings)
+  output <- character(length(strings))
+  output[has_state] <- gsub(".*([A-Z]{2}).*", "\\1", strings[has_state])
+  output
+}
+table(extract_state(data$home.dest))
+#      AB  BC  CA  CO  CT  DC  DE  FL  IA  IL  IN  KS  KY  MA  MB  ME  MI  MN  MO
+# 819   2   4  12   3  13   6   1   1   4  26   3   4   2  28  12   3  21  20   4
+#  MT  ND  NE  NH  NI  NJ  NM  NS  NY  OH  ON  OR  PA  PQ  RI  SA  SD  UT  VA  VT
+#   4   4   1   1   1  34   1   2 145  24  20   6  28  18   5   2   3   1   3   4
+#  WA  WI  WV
+#   4   8   2
+    </span></code>
+  </pre>
+</div>
+
+Let's see how this would look like in the mungebits formulation.
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+library(mungebits2) # devtools::install_github("syberia/mungebits2")
+bit <- mungebit$new(function(dataframe, from, to) {
+  extract_state <- function(strings) {
+    has_state <- grepl("[A-Z]{2}", strings)
+    output <- character(length(strings))
+    output[has_state] <- gsub(".*([A-Z]{2}).*", "\\1", strings[has_state])
+    output
+  }
+  dataframe[[to]] <- extract_state(dataframe[[from]])
+  dataframe
+})
+states <- bit$run(data, "home.dest", "state")$state
+stopifnot(identical(extract_state(data$home.dest), states)) # Passes.
+    </span></code>
+  </pre>
+</div>
+
+
+This is a <i>narrow transformation</i>: we can compute state on a passenger-by-passenger
+basis. Narrow transformations are usually straightforward. We stumble when we hit <i>wide transformations</i>,
+where we must use information about other customers to do the feature engineering
+step.
+
+
+
+
+
 
 
