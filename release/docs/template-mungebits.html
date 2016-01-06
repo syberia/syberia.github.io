@@ -642,8 +642,9 @@ list(...,
   data = list(
     ...
   , "Parse out state"       = list(extract_state, "home.dest", "state")
+  # We'll cover multi_column_transformation later.
   , "Cabin class var"       = list(multi_column_transformation(gsub), "cabin", "cabin_class", pattern = "[^A-Z]*", replacement = "")
-  , "Is pop cabin by state" = list(is_mode_in_group, "cabin_class", "state")
+  , "Is pop cabin by state" = list(is_mode_in_group, "cabin_class", "state", exclude = c("", NA))
     ...
   )
 )
@@ -656,5 +657,59 @@ can stop wasting time cleaning data and get back to work on math and stats.
 If someone else finds a general feature engineering or data cleaning idea,
 and they have parametrized and tested it well, they can easily share it
 and you just have to plug in the parameters relevant to your data set.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# lib/mungebits/is_mode_in_group.R
+variable_name <- function(target_variable, grouping_variable) {
+  paste0("is_mode_of_", target_variable, "_by_", grouping_variable)
+}
+
+train <- function(data, target_variable, grouping_variable, name, exclude = NA_character_) {
+  stopifnot(is.character(target_variable),
+    is.character(grouping_variable), is.character(exclude),
+    length(target_variable) == 1, length(grouping_variable) == 1,
+    target_variable %in% colnames(data), grouping_variable %in% colnames(data))
+  if (missing(name)) name <- variable_name(target_variable, grouping_variable)
+  stopifnot(is.character(name) && length(name) == 1 && !is.na(name) && nzchar(name))
+
+  if (!is.character(data[[target_variable]])) {
+    stop("The is_mode_in_group mungebit currently only supports character features.")
+  }
+
+  string_mode <- function(x) {
+    counts <- table(x)
+    names(counts)[which.max(counts)]
+  }
+
+  input$modes <- list() # Store each mode by state.
+  as.logical(
+    ave(data[[target_variable]], data[[grouping_variable]], FUN = function(var) {
+      if (length(unique(var)) == 1) {
+        input$modes[[var[1L]]] <- NA
+        NA
+      }
+      else {
+        input$modes[[var[1L]] <- mode <-
+          string_mode(Filter(function(x) x %in% exclude, var)
+        var == mode
+      }
+    }))
+}
+
+predict <- function(data, target_variable, grouping_variable, ...) {
+  if (missing(name)) name <- variable_name(target_variable, grouping_variable)
+  groups <- match(data[[target_variable]], names(input$modes))
+  var <- character(NROW(data))
+  var[is.na(groups)]  <- NA
+  var[!is.na(groups)] <- vapply(data[!is.na(groups), target_variable],
+    function(x) { input$modes[[x]] }, character(1))
+  data[[name]] <- var
+  data
+}
+    </span></code>
+  </pre>
+</div>
 
 
