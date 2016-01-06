@@ -518,18 +518,175 @@ bit <- mungebit$new(function(dataframe, from, to) {
   dataframe[[to]] <- extract_state(dataframe[[from]])
   dataframe
 })
+# This call will set from = "home.dest" and to = "state".
 states <- bit$run(data, "home.dest", "state")$state
 stopifnot(identical(extract_state(data$home.dest), states)) # Passes.
     </span></code>
   </pre>
 </div>
 
+<p>We've already gained some clarity: we can re-use this mungebit for <i>any</i>
+dataset that has a character feature containing state as a substring and create a new
+feature representing that state.</p>
 
-This is a <i>narrow transformation</i>: we can compute state on a passenger-by-passenger
-basis. Narrow transformations are usually straightforward. We stumble when we hit <i>wide transformations</i>,
-where we must use information about other customers to do the feature engineering
-step.
+<p>In the modeling engine, the above would instead become one line of code
+in the model file with a separate file for the mungebit definition. This
+makes it clear the mungebit can be re-used on multiple datasets for
+a variety of purposes.</p>
 
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# One line of code in some models/dev/some_model.R
+list(...,
+  data = list(
+    ...
+  , "Parse out state" = list(extract_state, "home.dest", "state")
+    ...
+  )
+)
+    </span></code>
+  </pre>
+</div>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# lib/mungebits/extract_state.R
+# Note that the function "extract_state" in models/dev/some_model.R
+# gets *injected*: we don't have to define it anywhere, since
+# the modeling engine figures it out from the filename.
+# We'll discuss the point of setting train = predict later.
+train <- predict <- function(dataframe, from, to) {
+  extract_state <- function(strings) {
+    has_state <- grepl("[A-Z]{2}", strings)
+    output <- character(length(strings))
+    output[has_state] <- gsub(".*([A-Z]{2}).*", "\\1", strings[has_state])
+    output
+  }
+  dataframe[[to]] <- extract_state(dataframe[[from]])
+  dataframe
+}
+    </span></code>
+  </pre>
+</div>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# test/lib/mungebits/extract_state.R
+# Our test suite won't run without a test for the mungebit.
+test_that("it can parse a simple state example", {
+  data <- data.frame(location = c("Birmingham, AL", "Chicago, IL", "Mars"),
+                     stringsAsFactors = FALSE)
+  # resource() will build us the mungebit: same as mungebit$new(train)
+  expect_equal(resource()$run(data, "location", "state")$state,
+               c("AL", "IL", ""))
+})
+# Running stest("lib/mungebits/extract_state") should convince you
+# the test suite passes.
+    </span></code>
+  </pre>
+</div>
+
+<p>This is a <i>narrow transformation</i>.
+We can compute state on a passenger-by-passenger
+basis. Narrow transformations are usually straightforward. This
+is why we set <code class="inline">train <- predict</code> in the 
+mungebit definition. We are making it clear that we can use
+the same code for cleaning the data offline versus running
+it on new data. This is not always the case.
+We stumble when we hit <i>wide transformations</i>,
+where we must use information about other passengers to do the feature engineering step.</p>
+
+<p>Different passengers will be on board the Titanic in different
+cabins and what cabin they're in (a good proxy for first class, second class,
+and third class) may be correlated with their state: passengers
+from one state may be on average more affluent than those in another
+and it may be unusual for a passenger from a certain state to be 
+in a certain cabin. We can measure this by creating a feature that asks
+whether a passenger is in a cabin that the majority of the passengers
+from the state are in, i.e., does the passenger's cabin equal the 
+mode (most frequently occuring value) of the cabins of the passengers
+in the same state?</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+head(data$cabin) # "B5" "C22 C26" "C22 C26" "C22 C26" "C22 C26" "E12"
+# We probably need something less granular.
+data$cabin_class <- gsub("[^A-Z]*", "", data$cabin) # "B" "C" "C" ...
+string_mode <- function(x) {
+  counts <- table(x)
+  names(counts)[which.max(counts)]
+}
+data$has_most_popular_cabin_by_state <- as.logical(
+  ave(data$cabin_class, data$state, FUN = function(cabin_class) {
+    if (length(unique(cabin_class)) == 1) { NA }
+    else { cabin_class == string_mode(Filter(function(x) x != "", cabin_class)) }
+  }))
+table(data$has_most_popular_cabin_by_state) # FALSE - 1160, TRUE - 110
+sum(is.na(data$has_most_popular_cabin_by_state)) # [1] 39
+    </span></code>
+  </pre>
+</div>
+
+<p>In practice, it may be very difficult to tell what will work and
+what won't work. We've certainly had our fair share of counter-intuitive
+variables that don't seem significant but, for example, may end up in
+many branches of a tree model. Comparing complex aggregations against
+concrete values is a good source of wide transformations and in many
+cases improves model performance. When in-the-flow trying out features
+like this, it is easy to forget how complex it may be to implement
+the features when new validation sets come along or streaming one-row
+data sets come through in production.</p>
+
+<p>In the above, the problem stems from the fact that we used
+R's <code class="inline">ave</code> function. If we had fed different
+subsamples of the dataset to the code, different feature engineering
+could result depending on whether certain states have two top contenders
+for most popular cabin! What if we want different models for different
+groups of the passenger population? Should we use the cabin class mode of the
+entire universe of passengers or restrict to each group? Both approaches
+work, and the former is usually solved through ETL, while the latter
+leads to a combinatorial explosion of data pipelines: we would need
+to create a separate feature for each group of passengers we're
+interested in modeling separately.</p>
+
+<p>Not only that, but we won't be able to run the same code above when
+a new data point comes in. We can't run <code class="inline">ave</code>
+on a single row of data! We would need to remember the cabin class mode
+for each state and then compare it against the state of the single row
+when we stream (replay on one data point) the feature engineering step.</p>
+
+<p>This is where mungebits shine. They allow you to unify your narrow
+and wide transformations, which together compose <i>all transformations</i>
+you could ever perform on any dataset in the universe, without introducing
+the <a target="_new" href="http://research.google.com/pubs/pub43146.html">technical debt</a>
+that is typically associated with most ETL workflows. All of the feature engineering
+stays experimental, within the console, interactive, is replayable, and
+when it's all over with you have a very customized data pipeline for
+performing the same cleaning steps on a new row of data.</p>
+ 
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+library(mungebits2) # devtools::install_github("syberia/mungebits2")
+bit <- mungebit$new(function(dataframe, from, to) {
+  extract_state <- function(strings) {
+    has_state <- grepl("[A-Z]{2}", strings)
+    output <- character(length(strings))
+    output[has_state] <- gsub(".*([A-Z]{2}).*", "\\1", strings[has_state])
+    output
+  }
+  dataframe[[to]] <- extract_state(dataframe[[from]])
+  dataframe
+})
+states <- bit$run(data, "home.dest", "state")$state
+stopifnot(identical(extract_state(data$home.dest), states)) # Passes.
+    </span></code>
+  </pre>
+</div>
 
 
 
