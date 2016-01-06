@@ -586,10 +586,13 @@ data$cabin_class <- gsub("[^A-Z]*", "", data$cabin) # "B" "C" "C" ...
 string_mode <- function(x) {
   counts <- table(x)
   names(counts)[which.max(counts)]
-}
+} # string_mode(c("A", "A", "A", "B", "C")) = "A"
 data$is_mode_of_cabin_class_by_state <- as.logical(
   ave(data$cabin_class, data$state, FUN = function(cabin_class) {
+    # Mode doesn't make sense if everyone's in the same cabin
+    # so for those values we set NA.
     if (length(unique(cabin_class)) == 1) { NA }
+    # A lot of passenger's records don't have a cabin, so exclude those.
     else { cabin_class == string_mode(Filter(function(x) x != "", cabin_class)) }
   }))
 table(data$is_mode_of_cabin_class_by_state) # FALSE - 1160, TRUE - 110
@@ -608,7 +611,7 @@ like this, it is easy to forget how complex it may be to implement
 the features when new validation sets come along or streaming one-row
 data sets come through in production.</p>
 
-<p>In the above, the problem stems from the fact that we used
+<p>In the above example, the problem stems from the fact that we used
 R's <code class="inline">ave</code> function. If we had fed different
 subsamples of the dataset to the code, different feature engineering
 could result depending on whether certain states have two top contenders
@@ -781,5 +784,103 @@ can stop wasting time cleaning data and get back to work on math and stats.
 If someone else finds a general feature engineering or data cleaning idea,
 and they have parametrized and tested it well, they can easily share it
 and you just have to plug in the parameters relevant to your data set.</p>
+
+<p>Let's take a step back and look at a simpler wide transformation.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+normalize <- function(variable, mean, stdev) {
+  (variable - mean) / stdev
+}
+
+normalizer <- mungebit$new(function(data, variables) {
+  input$means <- lapply(data[variables], mean, na.rm = TRUE)
+  input$stdev <- lapply(data[variables], stats::sd, na.rm = TRUE)
+  names(input$means) <- names(input$stdev) <- variables
+  data[variables] <- Map(normalize, data[variables], input$means, input$stdev)
+  data
+}, function(data, variables) {
+  # We should be careful since the variables may not be in the 
+  # same order when we're looking at new data.
+  data[variables] <-
+    Map(normalize, data[match(variables, names(input$means))],
+        input$means, input$stdev)
+  data 
+})
+
+head(normalizer$run(iris, "Sepal.Length")$Sepal.Length)
+# [1] -0.8976739 -1.1392005 -1.3807271 -1.5014904 -1.0184372 -0.5353840
+head(normalizer$run(iris[1, ], "Sepal.Length")$Sepal.Length)
+# [1] -0.8976739
+    </span></code>
+  </pre>
+</div>
+
+<p>We used the <code class="inline">mungebit$new</code> constructor to build
+a new mungebit. The first argument is the <b>train function</b>, the
+code that will be run the first time the <code class="inline">run</code>
+method is called (i.e., during training) and has access to an environment
+called <code class="inline">input</code> which will be stored on the
+mungebit object and used during subsequent calls to <code class="inline">run</code>.
+The second time we call that method it will execute the <b>predict function</b>,
+the second argument that was passed to the normalizer.</p>
+
+<p>You can think of the mungebit as a switch that, once flipped (trained), cannot
+be unflipped: it captures the essence of the feature engineering or data
+cleaning step and can be replayed on arbitrary subsets (including single
+rows or future single rows) of the same raw, messy data set.</p>
+
+<p>Even normalizing your features is non-trivial to reproduce, in
+the sense that you have to be careful to recall the means and standard
+deviations to achieve the same normalization on single rows of data.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+normalizer <- mungebit$new(column_transformation(function(variable) {
+  if (!trained) {
+    input$mean  <- mean(variable, na.rm = TRUE)
+    input$stdev <- stats::sd(variable, na.rm = TRUE)
+  }
+  (variable - input$mean) / input$stdev
+}))
+# Running the above example will achieve the same results.
+    </span></code>
+  </pre>
+</div>
+
+<p>The <a target="_new" href="https://github.com/syberia/mungebits2/blob/master/R/column_transformation.R"><code class="inline">column_transformation</code></a>
+helper function is exported by the mungebits2 library to deal with
+a common type of operation: one that only touches one column. 
+For these <i>column-shardable</i> operations, you can restrict
+your computation to each column individually and pass in the list
+of columns to execute on later.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+head(normalizer$run(iris, 1:4), 2) # Run the normalizer on the first four columns.
+#   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+# 1   -0.8976739  1.01560199    -1.335752   -1.311052  setosa
+# 2   -1.1392005 -0.13153881    -1.335752   -1.311052  setosa
+normalizer$run(iris[1, ], 1:4)
+#   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+# 1   -0.8976739    1.015602    -1.335752   -1.311052  setosa
+    </span></code>
+  </pre>
+</div>
+
+<p>You may also have noticed we didn't need a predict function
+when defining the normalizer mungebit in the second format. The 
+<code class="inline">trained</code> helper logical is injected into any
+mungebit train or predict function in case there is a large
+amount of re-usable shared logic. Generally, if your code
+for training and predicting varies by more than a few lines
+you should split them up into two functions. Otherwise, you
+can have a simple <code class="inline">if (!trained)</code> switch
+to record the metadata you'll need in <code class="inline">input</code>
+(e.g., means and standard deviations) to replay the munge step later.</p>
+
 
 
