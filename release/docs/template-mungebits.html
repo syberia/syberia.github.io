@@ -638,6 +638,8 @@ performing the same cleaning steps on a new row of data.</p>
 <div class="code">
   <pre>
     <code class="R"><span class="spacer">
+# models/dev/is_mode_in_group.R
+# Generally, the data scientist will only need to play with this file.
 list(...,
   data = list(
     ...
@@ -651,12 +653,6 @@ list(...,
     </span></code>
   </pre>
 </div>
-
-<p>By using mungebits&mdash;modular atomic production-ready data preparation&mdash;you
-can stop wasting time cleaning data and get back to work on math and stats.
-If someone else finds a general feature engineering or data cleaning idea,
-and they have parametrized and tested it well, they can easily share it
-and you just have to plug in the parameters relevant to your data set.</p>
 
 <div class="code">
   <pre>
@@ -679,37 +675,111 @@ train <- function(data, target_variable, grouping_variable, name, exclude = NA_c
   }
 
   string_mode <- function(x) {
-    counts <- table(x)
-    names(counts)[which.max(counts)]
+    if (length(x) == 0) NA_character_
+    else {
+      counts <- table(x)
+      names(counts)[which.max(counts)]
+    }
   }
 
   input$modes <- list() # Store each mode by state.
-  as.logical(
-    ave(data[[target_variable]], data[[grouping_variable]], FUN = function(var) {
+  data[[name]] <- as.logical(
+    ave(seq_len(NROW(data)), data[[grouping_variable]], FUN = function(ix) {
+      var   <- data[ix, target_variable]
+      group <- as.character(data[ix[1L], grouping_variable])
       if (length(unique(var)) == 1) {
-        input$modes[[var[1L]]] <- NA
+        input$modes[[group]] <- NA
         NA
+      } else {
+        input$modes[[group]] <- mode <-
+          string_mode(Filter(function(x) !x %in% exclude, var))
+        ifelse(var %in% exclude, NA, var == mode)
       }
-      else {
-        input$modes[[var[1L]] <- mode <-
-          string_mode(Filter(function(x) x %in% exclude, var)
-        var == mode
-      }
-    }))
+    })
+  )
+  data
 }
 
-predict <- function(data, target_variable, grouping_variable, ...) {
+predict <- function(data, target_variable, grouping_variable, name, exclude = NA_character_) {
   if (missing(name)) name <- variable_name(target_variable, grouping_variable)
-  groups <- match(data[[target_variable]], names(input$modes))
-  var <- character(NROW(data))
+  groups <- match(as.character(data[[grouping_variable]]), names(input$modes))
+  var <- logical(NROW(data))
   var[is.na(groups)]  <- NA
-  var[!is.na(groups)] <- vapply(data[!is.na(groups), target_variable],
-    function(x) { input$modes[[x]] }, character(1))
+  var[!is.na(groups)] <- as.logical(
+    ave(seq_len(NROW(data)), data[[grouping_variable]], FUN = function(ix) {
+      slice <- data[ix, target_variable]
+      ifelse(slice %in% exclude, NA,
+             slice == input$modes[[as.character(data[ix[1L], grouping_variable])]])
+    }))
   data[[name]] <- var
   data
 }
     </span></code>
   </pre>
 </div>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# test/lib/mungebits/is_mode_in_group.R
+test_that("it can tell whether a target is in the mode of a group on a simple example", {
+  data <- data.frame(stringsAsFactors = FALSE,
+    target = c("A", "A", "A", "B", "C"), group = rep(1, 5))
+
+  mb <- resource()
+  expect_equal(
+    mb$run(data, "target", "group")$is_mode_of_target_by_group,
+    c(TRUE, TRUE, TRUE, FALSE, FALSE)
+  )
+  # Check that it works on one-row data as well.
+  expect_true (mb$run(data[1, ], "target", "group")$is_mode_of_target_by_group)
+  expect_false(mb$run(data[4, ], "target", "group")$is_mode_of_target_by_group)
+})
+
+test_that("it keeps track of different modes for different groups", {
+  data <- data.frame(stringsAsFactors = FALSE,
+    target = c("A", "A", "A", "B", "C", "C", "C", "C", "B", "A"),
+    group = rep(c(1, 2), each = 5))
+
+  mb <- resource()
+  expect_equal(
+    mb$run(data, "target", "group")$is_mode_of_target_by_group,
+    c(TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE)
+  )
+  # Check that it works on one-row data as well.
+  expect_true (mb$run(data[1, ], "target", "group")$is_mode_of_target_by_group)
+  expect_false(mb$run(data[4, ], "target", "group")$is_mode_of_target_by_group)
+  expect_true (mb$run(data[6, ], "target", "group")$is_mode_of_target_by_group)
+  expect_false(mb$run(data[9, ], "target", "group")$is_mode_of_target_by_group)
+})
+
+test_that("it assigns NA to excluded labels", {
+  data <- data.frame(stringsAsFactors = FALSE,
+    target = c("A", "A", "A", "B", ""), group = rep(1, 5))
+  mb <- resource()
+  expect_equal(
+    mb$run(data, "target", "group", exclude = "")$is_mode_of_target_by_group,
+    c(TRUE, TRUE, TRUE, FALSE, NA)
+  )
+  # Check that it works on one-row data as well.
+  expect_true (mb$run(data[1, ], "target", "group", exclude = "")$is_mode_of_target_by_group)
+  expect_false(mb$run(data[4, ], "target", "group", exclude = "")$is_mode_of_target_by_group)
+  expect_equal(mb$run(data[5, ], "target", "group", exclude = "")$is_mode_of_target_by_group, NA)
+})
+    </span></code>
+  </pre>
+</div>
+
+<p>Wide transformations can be tricky to reproduce in future scenarios
+when new data comes in. By acknowleding this distinction and tackling
+the hidden complexity head-on through a convention with built-in testing,
+we can avoid headaches down the road when we find a useful but difficult
+to procure features that will have to be replicated for future records.</p>
+
+<p>By using mungebits&mdash;modular atomic production-ready data preparation&mdash;you
+can stop wasting time cleaning data and get back to work on math and stats.
+If someone else finds a general feature engineering or data cleaning idea,
+and they have parametrized and tested it well, they can easily share it
+and you just have to plug in the parameters relevant to your data set.</p>
 
 
