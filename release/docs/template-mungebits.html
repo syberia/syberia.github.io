@@ -381,4 +381,38 @@ or proceed with stagerunners if you'd like the abbreviated tour.
 
 <h2>Advanced mungebits</h2>
 
+<p>The purpose of mungebits is to give a syntax for rapidly 
+cleaning data and experimenting with feature engineering
+without having to rewrite anything when it comes time to
+productionize. This would be a wasted effort.</p>
+
+<p>The primary abstractions provided by the
+<a target="_new" href="https://github.com/syberia/mungebits2">mungebits2</a>
+package are:</p>
+
+<ul>
+  <li><p><a target="_new" href="https://github.com/syberia/mungebits2/tree/master/R/mungebit.R">Mungebit</a></li> R6 class.
+  A mungebit holds <code class="inline">c("train_function", "predict_function", "input")</code>,
+  where the first two are both functions that take and return a dataframe (with possibly
+  more parameters) and the last one is an environment object used by the train function
+  to record metadata required by the predict function.</a></p>
+
+  <p>Mungebits are meant to record the most abstract feature cleaning and engineering
+  ideas: filter irrelevant columns, replace values, convert to a categorical, discretize,
+  impute, apply PCA, etc. They are connected to a <i>specific</i> dataset through a mungepiece.</li>
+
+  <li><a target="_new" href="https://github.com/syberia/mungebits2/tree/master/R/mungepiece.R">Mungepiece</a></li> R6 class.
+  While a mungebit is the abstract data cleaning or feature engineering step, a
+  mungepiece records the parameters passed to the mungebit as applied to a specific
+  dataset.</li>
+
+  <li>The <a target="_new" href="https://github.com/syberia/mungebits2/tree/master/R/munge.R">munge</a> function.
+  Applying the munge function to a raw dataset and a list of untrained mungepieces
+  will yield a trained list of mungepieces, a <i>munge procedure</i>, which can
+  be applied to any future stream of the dataset drawn from the same distribution.
+  For example, if someone gives you a validation set with three more months of data,
+  or a new data record comes in through a streaming production system, the munge 
+  procedure will replay the feature engineering to clean up the data.</li>
+</ul>   
+
 
