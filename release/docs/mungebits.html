@@ -620,13 +620,13 @@ string_mode <- function(x) {
   counts <- table(x)
   names(counts)[which.max(counts)]
 }
-data$has_most_popular_cabin_by_state <- as.logical(
+data$is_mode_of_cabin_class_by_state <- as.logical(
   ave(data$cabin_class, data$state, FUN = function(cabin_class) {
     if (length(unique(cabin_class)) == 1) { NA }
     else { cabin_class == string_mode(Filter(function(x) x != "", cabin_class)) }
   }))
-table(data$has_most_popular_cabin_by_state) # FALSE - 1160, TRUE - 110
-sum(is.na(data$has_most_popular_cabin_by_state)) # [1] 39
+table(data$is_mode_of_cabin_class_by_state) # FALSE - 1160, TRUE - 110
+sum(is.na(data$is_mode_of_cabin_class_by_state)) # [1] 39
     </span></code>
   </pre>
 </div>
@@ -806,10 +806,10 @@ test_that("it assigns NA to excluded labels", {
 <p>Wide transformations can be tricky to reproduce in future scenarios
 when new data comes in. By acknowleding this distinction and tackling
 the hidden complexity head-on through a convention with built-in testing,
-we can avoid headaches down the road when we find a useful but difficult
+we can avoid headaches down the road when we find useful but difficult
 to procure features that will have to be replicated for future records.</p>
 
-<p>By using mungebits&mdash;modular atomic production-ready data preparation&mdash;you
+<p>By using mungebits&mdash;modular production-ready data preparation&mdash;you
 can stop wasting time cleaning data and get back to work on math and stats.
 If someone else finds a general feature engineering or data cleaning idea,
 and they have parametrized and tested it well, they can easily share it
