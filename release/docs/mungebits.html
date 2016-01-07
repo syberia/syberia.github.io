@@ -405,9 +405,9 @@ without stumbling on complexity: tests pay off.</p>
 
 <h2>Next Steps</h2>
 
-Continue reading below for the more advanced and thorough mungebits section,
+<p>Continue reading below for the more advanced and thorough mungebits section,
 or proceed with stagerunners if you'd like the abbreviated tour.
-You can always come back to finish the more advanced use cases.
+You can always come back to finish the more advanced use cases.</p>
 
 <ul>
   <li><a href="stagerunner.html">Stagerunner</a></li>
@@ -689,6 +689,16 @@ list(...,
     ...
   )
 )
+# Move your mouse here -> x <- and scroll to the right.
+# We take the one line per munge step approach and violate the
+# typical column length developer sanity concern
+# (lots of text on one row of a file is a nuisance to read and violates
+# most style guides). This is so that when it gets too long, we can use
+# our annoyance as a weapon to refactor the step into its own mungebit
+# or condense the parametrization.
+#
+# It also makes it frictionless to comment out certain steps if you're
+# experimenting and makes the full modeling procedure a joy to read.
     </span></code>
   </pre>
 </div>
@@ -697,6 +707,9 @@ list(...,
   <pre>
     <code class="R"><span class="spacer">
 # lib/mungebits/is_mode_in_group.R
+# We're going to show you what a thorough implementation of this might
+# look like. Feel free to breeze through this and come back to it when
+# you feel fresh later.
 variable_name <- function(target_variable, grouping_variable) {
   paste0("is_mode_of_", target_variable, "_by_", grouping_variable)
 }
@@ -721,7 +734,7 @@ train <- function(data, target_variable, grouping_variable, name, exclude = NA_c
     }
   }
 
-  input$modes <- list() # Store each mode by state.
+  input$modes <- list() # Store each mode by grouping variable.
   data[[name]] <- as.logical(
     ave(seq_len(NROW(data)), data[[grouping_variable]], FUN = function(ix) {
       var   <- data[ix, target_variable]
@@ -878,7 +891,8 @@ normalizer <- mungebit$new(column_transformation(function(variable) {
   if (!trained) {
     input$mean  <- mean(variable, na.rm = TRUE)
     input$stdev <- stats::sd(variable, na.rm = TRUE)
-  }
+  } # column_transformation keeps track of the mean and standard
+    # deviation of each column separately by "shadowing" the input helper.
   (variable - input$mean) / input$stdev
 }))
 # Running the above example will achieve the same results.
