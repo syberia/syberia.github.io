@@ -223,7 +223,184 @@ Inspecting <code class="inline">objectdiff::commits(env)</code> shows that two c
 have been made and running <code class="inline">objectdiff::rollback(env, 1)</code> shows
 that <code class="inline">ncol(env$data) == 4</code>.
 
-<code class="inline"></code>
+<p>It's possible to nest stagerunners:</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+r <- stagerunner$new(new.env(), list(
+  "Import data" = function(env) { env$data <- get(get("DATASET", envir = globalenv())) },
+  "Munge data"  = list(                          
+    "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+    "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+  ),
+  "Make a model" = function(env) { env$model <- stats::lm(Sepal.Length ~ ., data = env$data) }  
+))
+DATASET <- "iris"
+r$run() # Note that class(r$context$model) is an lm object.
+    </span></code>
+  </pre>
+</div>
+
+<h2>The modeling engine</h2>
+
+<p>The default Syberia engine provides a lot of syntactic sugar to make the above
+process less painful. In particular, we make the notion of <b>stages</b> primitive
+and parametrizable: a stage is simply one node of the full execution tree of a
+stagerunner. The top-level stages that come out-of-the-box are import, data, model,
+and export stage but it is trivial to create more.</p>
+
+<p>The power of this approach lies in finding <b>good parametrizations of the
+data science process</b>. Syberia is a meta-framework that allows you to build
+DSLs customized to solving your specific data problem. To use it correctly
+you may have to create new abstractions (like finding the correct parametrization
+for your stages) in order to reap its full power.</p>
+
+<p>Web frameworks like Rails
+discovered that the <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller">model-view-controller</a>
+pattern works well for many web applications, but as data science is a 
+field still in relative infancy, it is your and the Syberia commmunity's duty
+to explore new paradigms for rapidly iterating on data science solutions.</p>
+
+<p>Enough hype. Let's see an example of an actual data science workflow
+with this approach.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# Open up the example.sy project from earlier and place this file in
+# models/dev/example2.R
+list(import = list(R = "iris"))
+    </code>
+  </pre>
+</div>
+
+<p>Under the hood, typing <code class="inline">run('example2')</code> creates a stagerunner
+that is roughly equivalent to the following code:</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+import_R <- function(params) {
+  get(params, envir = globalenv())
+}
+
+import <- function(params) {
+  adapter <- names(params)[1]
+  params  <- params[[1]]                    
+  adapter <- get(paste0("import_", adapter))
+  adapter(params)                          
+}
+
+r <- stagerunner$new(new.env(), list(
+  "Import data" = function(env) { env$data <- import(list(R = "iris")) }
+))
+r$run()                          
+    </span></code>
+  </pre>
+</div>
+
+<p>That seems like a very complicated way of saying <code class="inline">env$data <- iris</code>!
+It is. However, we have gained something in the process. Note that our model file
+is simply one line of code and clearly reads "import data from an R global variable
+called 'iris'." If we replace it with the below code we would read from an Amazon S3
+cloud storage key without any additional work.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(import = list(s3 = "some/s3/key"))
+    </code>
+  </pre>
+</div>
+
+<p>It is possible to create custom import adapters that read from your
+production database, a data warehouse, a stream, etc.</p> 
+
+<p>The modeling engine includes a few <a href="https://github.com/syberia/modeling.sy/tree/master/lib/adapters">very minimal adapters</a> but we will later see how to create your own.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(
+  import = list(R = "iris"),
+  data   = list(
+    "Create a dependent variable" = list(renamer, c("Sepal.Length" = "dep_var")),
+    "Drop categorical features"   = list(drop_variables, is.factor)
+  )
+)
+    </code>
+  </pre>
+</div>
+
+<p>After <code class="inline">run("example2")</code> take a look at
+<code class="inline">head(A)</code> and you will see that we have a
+<code class="inline">dep_var</code> column and Species has
+been dropped. The above shows a <b>parametrization of feature engineering</b>:
+instead of writing out the full code for renaming the variable and 
+describing in R code how to drop the factor columns, we have
+used a shorthand for describing mungebits to achieve our
+feature engineering pipeline.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(
+  import = list(R = "iris"),
+  data   = list(
+    "Create a dependent variable" = list(renamer, c("Sepal.Length" = "dep_var")),
+    "Drop categorical features"   = list(drop_variables, is.factor)
+  )
+)
+    </code>
+  </pre>
+</div>
+
+<p>It is trivial to add new import and export adapters, parametrize mungebits
+that do complex feature engineering tasks, and parametrize statistical
+classifiers using any R package from CRAN or GitHub.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(
+  import = list(R = "iris"),
+  data   = list(
+    "Create a dependent variable" = list(renamer, c("Sepal.Length" = "dep_var")),
+    "Create a primary key variable" = list(multi_column_transformation(seq_along), "dep_var", "id"),
+    "Drop categorical features"   = list(drop_variables, is.factor)
+  ),
+  model  = list("lm", .id_var = "id"),
+  export = list(R = "model") 
+) # Try typing class(model) after run("example2")
+    </code>
+  </pre>
+</div>
+
+<p>The default implementation of model stage requires a primary key in the
+data set so we artificially create one. This is so we can easily remember
+train/test splits when making production models on real data sets later.
+The default model stage encourages storing train IDs on the model
+object by deisgn. You almost always want to remember the train IDs so you
+can perform validation correctly in the future and correctly compare refits against
+past models without predicting on training rows.</p>
+
+<p>With the Syberia modeling engine you enter the realm of developers
+and are no longer playing in an interactive notebook but recording the
+fruits of your labor into a breathing codebase with the aid of a
+very interactive execution environment. In its ideal incarnation,
+Syberia deprecates the need for notebooks and other data science tools
+and replaces it with a simple process understood by all software
+engineers: write clean, modular, and testable code so that anything
+you want to create is at your feet. If you are smart enough to
+master the statistics behind data science then you can leave
+the IDE behind and learn the development tools that make software
+engineers so capable and productive. You'll also increase your salary.</p>
+
+<h2>Re-running stages</h2>
+
+The real power from the stagerunner approach lies in replay
+
 
 
 
