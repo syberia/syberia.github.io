@@ -36,3 +36,46 @@ the future may end up with much more.</p>
 
 <h2>The Execution Cycle</h2>
 
+<div class="img-right">
+  <img src="../../images/model_process.png" title="Model Process" />
+</div>
+
+<p>As mentioned earlier, a typical data science cycle begins with:
+importing data, munging (cleaning) it, running a statistical classifier,
+and exporting the model for validation and deployment.</p>
+
+<p>A <b>stagerunner</b> is a single R object (specifically, an R6 object,
+for those familiar with the R6 package which augments R's object-oriented
+programming capabilities) that represents the full execution cycle
+of the data science process. In workflows with large data sets, this
+process is typically distributed across many machines in frameworks
+like Spark and Hadoop. Since there is no distributed implementation
+of the R interpreter (yet - shh ;) ) we focus for now on small and
+medium size data problems. Typically, productionizing several 80%
+solutions offers more business value than productionizing one 100% 
+solution and anyway downsampling is often 
+<a href="http://www.umiacs.umd.edu/~jimmylin/publications/Lin_Kolcz_SIGMOD2012.pdf">good enough</a>.</p>
+
+<p>A <b>stagerunner</b> is simply a tree structure whose terminal nodes
+are functions that operate on an <b>R environment object</b>. If you
+are unfamiliar with this kind of object but understand pointers from
+languages like C++, simply think of it as a pointer to a list. These
+functions are executed linearly on the R environment starting with
+the empty environment and culminating in side effects that export
+a model (such as storing it to a backend like a cloud storage service or
+a file). For the mathematically inclined, think of a stagerunner as
+finite sequences from the monoid of endomorphisms of R environments
+with the additional meta-data of a hierarchical structure (a very
+fancy way to say to say a list of functions that take and return
+exactly one environment)</p>
+
+<p>Some task scheduling frameworks like Luigi and Airflow take arbitrary
+directed graphs of tasks and this is certainly the correct generalization
+but can increase the difficulty of debugging failures in complex topologies
+of tasks and anyway staying within a console is much cozier.
+Eventually Syberia may release this kind of hybrid in-console task 
+scheduling and debugging but for now let's master stagerunners.</p>
+
+
+
+
