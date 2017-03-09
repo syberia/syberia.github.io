@@ -403,10 +403,24 @@ engineers so capable and productive. You'll also increase your salary.</p>
 The standard development cycle for a new model should proceed as follows.</p>
 
 <p><ul><li>Determine what data you want to import. Ensure your adapter has
-an easy toggle for importing a tiny subset of the data (e.g., a few
-thousand rows by setting a certain <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/options.html">global option</a>).</li>
+an easy toggle for importing a tiny subset of the data (e.g., you should be
+able to restrict to a few thousand rows by setting a certain <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/options.html">global option</a>).</li>
+  <li>Build your feature engineering pipeline, replaying each step and
+    checking the <code class="inline">B</code> and <code class="inline">A</code>
+    global variable helpers to examine what the data looks like
+    <b>before and after running a munging step</b>.</li>
+  <li>Train a small model and check that the parameters are sane.</li>
+  <li>Run a full model by flipping the aforementioned toggle and
+    make sure to turn off the remember flag on the stagerunner.</li>
 </ul></p>
 
+<p>This is a local development workflow. The last step should be executed
+on a remote build scheduling system that deploys instances capable of
+handling your large data sets (like a large Amazon AWS instance or 
+a multi-instance operating system like Plan 9--just kidding, but that
+would be cool).</p>
 
+
+<code class="inline"></code>
 
 
