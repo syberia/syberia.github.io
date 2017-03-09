@@ -56,25 +56,40 @@ solutions offers more business value than productionizing one 100%
 solution and anyway downsampling is often 
 <a href="http://www.umiacs.umd.edu/~jimmylin/publications/Lin_Kolcz_SIGMOD2012.pdf">good enough</a>.</p>
 
-<p>A <b>stagerunner</b> is simply a tree structure whose terminal nodes
+<p>A stagerunner is simply a tree structure whose terminal nodes
 are functions that operate on an <b>R environment object</b>. If you
-are unfamiliar with this kind of object but understand pointers from
+are unfamiliar with R environments but understand pointers from
 languages like C++, simply think of it as a pointer to a list. These
 functions are executed linearly on the R environment starting with
 the empty environment and culminating in side effects that export
-a model (such as storing it to a backend like a cloud storage service or
-a file). For the mathematically inclined, think of a stagerunner as
-finite sequences from the monoid of endomorphisms of R environments
+a model, such as storing it to a backend like a cloud storage service or
+a file. For the mathematically inclined, think of a stagerunner as
+an element from finite sequences on the monoid of endomorphisms of R environments
 with the additional meta-data of a hierarchical structure (a very
-fancy way to say to say a list of functions that take and return
+fancy way to say a list of functions that take and return
 exactly one environment)</p>
 
 <p>Some task scheduling frameworks like Luigi and Airflow take arbitrary
 directed graphs of tasks and this is certainly the correct generalization
 but can increase the difficulty of debugging failures in complex topologies
-of tasks and anyway staying within a console is much cozier.
+of tasks. Staying within a console tends to be much cozier.
 Eventually Syberia may release this kind of hybrid in-console task 
-scheduling and debugging but for now let's master stagerunners.</p>
+scheduling and debugging but for now let's master stagerunners. (If you 
+think hard enough about it, any directed graph can be decomposed into
+purely serial components.)</p>
+
+<h2>A simple stagerunner</h2>
+
+<p>Before we jump into the convenient conventions set up by the modeling
+engine that ships with Syberia by default, let's review the basics
+of stagerunners.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+    </code>
+  </pre>
+</div>
 
 
 
