@@ -451,8 +451,56 @@ able to restrict to a few thousand rows by setting a certain <a href="https://st
 on a remote build scheduling system that deploys instances capable of
 handling your large data sets (like a large Amazon AWS instance or 
 a multi-instance operating system like Plan 9--just kidding, but that
-would be cool).</p>
+would be cool). Alternatively, you can SSH into a large instance
+and run models there directly but it will be cumbersome to try
+experiments that simultaneously train thousands of models.</p>
 
+<p>For example, try the following commands.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+run(, 1)
+run(, "2/1")
+run(, "data/2")
+run(, "da/1", "da/2")
+run(, "data")
+run(, "model")
+run(, 3)
+    </code>
+  </pre>
+</div>
+
+<p>Carefully inspect the structure of <code class="inline">B</code> and
+<code class="inline">A</code> before and after each command.</p>
+
+<p>Note that these helpers are really <a href="https://github.com/syberia/modeling.sy/blob/master/config/global/modeling/modeling.R#L92-L95">active bindings</a> and
+boil down to <code class="inline">r$context$data</code> on the
+underlying stagerunner that is being constructed on-the-fly
+before and after calling <code class="inline">r$run("2/1")</code>, etc.</p>
+
+<p>The extra comma at the beginning indicates we wish to continue to
+run the "example2" model. The difference is that we are calling the
+<a href="https://github.com/syberia/modeling.sy/blob/master/config/global/modeling/run_model.R">run global helper</a> which takes an additional first parameter rather than the
+run method on the underlying stagerunner. Typing <code class="inline">run("example1", to = 2)</code>
+indicates we wish to switch focus to the "example1" model and execute its
+process up to the data munging stage.</p>
+
+<p>Note the fuzzy matching in the above examples. Under the hood, 
+"da/1" means "look for a stage that matches the regular expression
+<b>.*d.*a.*</b> in its top-level and grab the first node." What
+happens when you try <code class="inline">run(, "d/1")</code>?</p>
+
+<p>An important note is that fuzzy matching can be ambiguous and
+sometimes execute the wrong model. Fuzzy match results are ordered
+in descending order by file modification time, so if you ever find
+<code class="inline">run</code> is being annoying and not executing
+the correct model (e.g., if you have "example" and "example_foo"
+and <code class="inline">run("example")</code> is matching to
+the incorrect one) simply make a tiny change like adding a space
+and save the model file: <code class="inline">run</code> will
+pick up the change and execute the model whose file has been
+most recently modified.</p>
 
 <code class="inline"></code>
 
