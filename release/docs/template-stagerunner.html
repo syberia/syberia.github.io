@@ -87,10 +87,143 @@ of stagerunners.</p>
 <div class="code">
   <pre>
     <code class="R"><span class="spacer">
+r <- stagerunner$new(list2env(list(data = iris)), list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+))
+r$run()
     </code>
   </pre>
 </div>
 
+<p>Ok so you got me, I lied a little. Stagerunner functions do not need to return the
+environment they modify since this is one of the few R objects that is
+passed by reference and not by value, and hence any modification in
+another scope (like a function call) modifies the original environment object.</p>
+
+<p>Observe that running the above code yields the desired changes:
+<code class="inline">str(r$context$data)</code> shows we have a modified
+version of <code class="inline">iris</code> with the first column doubled
+and the only categorical column removed.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+env <- list2env(list(data = iris))
+r <- stagerunner$new(env, list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+))
+r$run(1); r$run(1); r$run(1)
+    </code>
+  </pre>
+</div>
+
+<p>Inspecting <code class="inline">head(env$data[[1]])</code> shows that the first column of
+<code class="inline">iris</code> is octupled as expected. Now try re-executing all but
+the last line and type <code class="inline">r$run(2)</code>. The last column
+was dropped, as expected.</p>
+
+<p>This is an example of a <b>stateless stagerunner</b>: it has no memory about which
+stages ("Double first columns" versus "Drop categorical columns") were executed.
+Typically this matters as many feature engineering operations are not 
+commutative: dropping correlated features and then imputing may yield
+different results than doing it the other way around.</p>
+
+<h2>More complicated runners</h2>
+
+<div class="img-right">
+  <img src="../../images/achievement-unlocked-template.jpg" title="Achievement unlocked" height="60" />
+</div>
+
+<p>To enforce the order of operation and gain an additional feature we
+enable <b>stateful stagerunners</b>. This unlocks the ability to
+<b>replay any part of the data science process</b> like checkpoints in a 
+video game.
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+r <- stagerunner$new(list2env(list(data = iris)), list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+), remember = TRUE)
+r$run(2)
+    </code>
+  </pre>
+</div>
+
+<p>Note the <code class="inline">remember = TRUE</code> flag at the end. The above
+code will fail with "Cannot run this stage yet because some previous stages have not been executed."
+This is because we are trying to run step two without first running step one. 
+Running <code class="inline">r$run(1)</code> first will fix the problem.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+env <- list2env(list(data = iris))
+r <- stagerunner$new(env, list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+), remember = TRUE)
+r$run(1); r$run(1); r$run(1)
+    </code>
+  </pre>
+</div>
+
+<p>Inspecting <code class="inline">head(env$data)</code> shows that the first column
+of <code class="inline">iris</code> was doubled, not octupled! This is because 
+with remembrance of state turned on our stagerunner object begins with
+a cached copy of the original environment rather than operating on the 
+latest environment. This is powerful: with stateful stagerunners, we can simulate
+going back in time to any step in the process!</p>
+
+<p>The code behind stagerunner makes some <a href="https://en.wikipedia.org/wiki/Space%E2%80%93time_tradeoff">space-time tradeoffs</a>. With stateful runners, <b>a full copy is made of 
+the environment on each step</b>. This is prohibitively memory expensive
+with large datasets. With small datasets, it is manageable and gives us 
+fantastic interactive data analysis and debugging capabilities.</p>
+
+<p>The typical workflow within the Syberia modeling engine is to 
+use an R option or flag to import a small subset (a couple thousand rows)
+of the desired data set and develop a full-fledged prototype of 
+a feature engineering pipeline and classifier. Any immediate errors
+or unexpected bugs in feature engineering can be rapidly debugged
+by effectively using stagerunners.</p> 
+
+<p>When the data scientist is satisfied with the end-to-end process,
+she simply flips the stagerunner to run in a stateless context on the
+full data set and gets to have her cake and eat it too; no more painful
+debugging of background batch jobs or digging through logs.</p>
+
+<p>A final goodie: by using <a href="https://github.com/robertzk/objectdiff">objectdiff</a>,
+we can reduce the space-time tradeoff even further by <b>only copying the
+elements of the environment that changed during each step</b>. If only
+one column was doubled in a thousand-column dataframe, the stagerunner
+and objectdiff combo heuristically analyzes the output of the functions
+that are executed and rapidly detects only one column was changed, minimizing
+how much is stored in the "git-like patches" recording the differences
+in each stage. This retains the replay capability of stagerunners while
+minimizing memory overhead.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+env <- objectdiff::tracked_environment(list2env(list(data = iris)))
+r <- stagerunner$new(env, list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+), remember = TRUE)
+r$run()
+    </code>
+  </pre>
+</div>
+
+<p>Note that <code class="inline">class(env) == c("tracked_environment", "environment")</code>.
+Inspecting <code class="inline">objectdiff::commits(env)</code> shows that two commits
+have been made and running <code class="inline">objectdiff::rollback(env, 1)</code> shows
+that <code class="inline">ncol(env$data) == 4</code>.
+
+<code class="inline"></code>
 
 
 
