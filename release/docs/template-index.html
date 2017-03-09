@@ -2,6 +2,43 @@
 
         <p>Let's get you up and running with Syberia!</p>
 
+        <p>If you already know what Syberia is and what you can do it with it, feel free to
+        skip to the next <a href="#example">subsection</a>. Otherwise, hopefully this
+        brief section will answer some questions.</p>
+
+        <p>Will Syberia help me if I am trying to <b>productionize data science models</b>?
+        Yes, but primarily if those models are written in R.
+        Syberia is a framework designed specifically to productionize the R
+        programming language with rapid iteration cycles, although hybrid models
+        consisting of Python, Scala, and other tools are also possible to deploy.</p>
+
+        <p>Will Syberia help me if I am trying to <b>quantitatively understand a business question</b>?
+        While not its primary design, the packages that compose Syberia can be
+        used to augment interactive data analysis and introduce the benefits
+        of solid developer hygiene such as testability and modularity.</p>
+
+        <p>Will Syberia help me if I am <b>solving an academic problem</b>? 
+        Syberia was designed in an industry context but is general enough to be
+        useful for other domains, including academia. Although no out-of-the-box 
+        Syberia engine currently exists for reproducible research and publication,
+        this is a possible path to explore for the future.</p>
+
+        <p>What if I need to solve a <b>big data problem</b> or <b>deploy low latency
+          machine learning models</b>? Syberia is designed to act as a command
+        center for all data science problems and eventually interact smoothly
+        with high-performance and large-size data requirements. Currently, you
+        should expect to be able to productionize any R code (10-1000ms latency SLAs on data
+        problems with inputs of millions of rows and hundreds of features).
+        </p>
+
+        <p>What about <b>dashboards</b>? <b>Unstructured or audiovisual data</b>? <b>Deep 
+          learning</b>? The world is at your feet but you will have to do some
+        custom <a href="https://en.wikipedia.org/wiki/Foreign_function_interface" target="_new">FFI</a> work.
+        For the current alpha release, productionization of medium-size structured data
+        problems is supported out-of-the-box.</p>
+
+        <h2><a name="example">An example</a></h2>
+
         <p>Before we get started, let's take a look at what a classifier might
            look like using the Syberia modeling engine:</p>
         <div class="code">
