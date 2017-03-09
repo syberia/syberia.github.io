@@ -114,7 +114,7 @@ or even execute just a subset of the munge procedure using <code class="inline">
 composed of lists and atomic vectors. This makes serialization very easy in R! In fact,
 the built-in <code class="inline">saveRDS</code> is capable of serializing most objects.
 (If you have custom C pointers or difficult-to-serialize environment objects you can 
-define a custom serializers &mdash; see the appendix).</p>
+define a custom serializers &mdash; see the <a href="#serializing">appendix</a>).</p>
 
 <p>To save the model object to a file, simply use <code class="inline">saveRDS</code>:</p>
 
@@ -139,6 +139,42 @@ readRDS("~/tmp/model.rds")$predict(iris[1:5, ])
 </ul>
 
 <code class="inline"></code>
+
+<h2>Appendix: Model deflation</h2>
+
+<p>R's easy serialization capability seems like a free lunch but there is a dangerous
+trade-off. If you use environments or functions (which implicitly have an environment
+attached) anywhere in your model objects it is possible to capture far more than you
+intended upon serialization.</p>
+
+<p>For example, instead of capturing just the model objects, you might capture most
+of the data in the global environment and store gigabytes of unnecessary serialized
+R objects! This is not a problem in languages like Python or Java because every object
+must have its own serialization (pickling) code.</p>
+
+<p>To relieve this issue, the modeling engine comes with some <a href="https://github.com/syberia/modeling.sy/blob/c0a8e2e85a2bbaa4cfb68e83c28b6495ac363b20/lib/shared/full_deflate.R">simple deflation triggers</a>
+that prune any closures (functions) on the model objects from carrying too much information. Because
+R is such a dynamic language, there is in general no way of identifying what will be needed
+by a given function, but we try our best: we assume the train and predict functions of a
+classifier are <b>pure</b>.</p>
+
+<p>Pure functions do not make use of global variables or variables in
+the parent environment of the function. This rules out helper functions but increases
+stability and serializability. Simply put your helpers in the body of the train or 
+predict functions.</p>
+
+<p>If you find your model objects getting large unexpectedly, carefully examine
+your code and what you are storing in <code class="input">input</code>, or modify
+the <a href="https://github.com/syberia/modeling.sy/blob/master/lib/controllers/classifiers.R#L9">model stage</a> accordingly.</p>
+
+<h2><a name="serializing" style="font-weight: normal">Appendix: Custom Serializers</a></h2>
+
+<p>A lot of R models serialize out-of-the-box, but some models (like 
+<a href="https://github.com/dmlc/xgboost">xgboost</a>) represent their underlying state
+in a C structure which is not natively serializable by R.</p>
+
+<p>For such models, you may have to define additional serialization procedures.
+TODO: Explain how.</p>
         </div>
         <div class="col2">
           <br /> <br /> <br />

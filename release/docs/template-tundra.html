@@ -81,7 +81,7 @@ or even execute just a subset of the munge procedure using <code class="inline">
 composed of lists and atomic vectors. This makes serialization very easy in R! In fact,
 the built-in <code class="inline">saveRDS</code> is capable of serializing most objects.
 (If you have custom C pointers or difficult-to-serialize environment objects you can 
-define a custom serializers &mdash; see the appendix).</p>
+define a custom serializers &mdash; see the <a href="#serializing">appendix</a>).</p>
 
 <p>To save the model object to a file, simply use <code class="inline">saveRDS</code>:</p>
 
@@ -134,7 +134,7 @@ predict functions.</p>
 your code and what you are storing in <code class="input">input</code>, or modify
 the <a href="https://github.com/syberia/modeling.sy/blob/master/lib/controllers/classifiers.R#L9">model stage</a> accordingly.</p>
 
-<h2>Appendix: custom serializers</h2>
+<h2><a name="serializing" style="font-weight: normal">Appendix: Custom Serializers</a></h2>
 
 <p>A lot of R models serialize out-of-the-box, but some models (like 
 <a href="https://github.com/dmlc/xgboost">xgboost</a>) represent their underlying state
