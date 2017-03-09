@@ -510,27 +510,31 @@ most recently modified.</p>
 next step is to learn more about how the various stages are parametrized 
 and learn how to extend them and write your own. For example, if you
 need to generate a report after the model is trained but before exporting
-the object, you could create a "report" stage that creates an
+the object, you could write a "report" stage that creates an
 appropriate R markdown file. Or maybe you want to deploy a web service
 that has a dashboard after you have exported the model: simply
 write a "dashboard" stage.</p>
 
 <p>To summarize, we have learned that:</p>
 
-<p><ul><li>Model files are simply syntactic shortcuts for building stagerunner objects.</li>
-  <li>Stagerunner objects are syntactic shortcuts for a list of
-    R functions that take and modify an environment called the
-    <b>stagerunner context</b>.</li>
-  <li>The power of using stagerunners derives from our departure from
-    messy, linear scripts. By separating components into smaller function,
+<p><ul><li>Model files are simply syntactic shortcuts for building stagerunner objects.
+  Typically, you never have to explicitly deal with these objects.</li>
+  <li>Stagerunner objects are syntactic shortcuts for executing
+    parts of a list of R functions that take and modify an environment called the
+    <b>stagerunner context</b>. In other words, stagerunners express in code
+  the idea of highlighting a section of an R file and hitting the execute button.</li>
+  <li>The power of using stagerunners derives in our departure from
+    messy, linear scripts. By separating components into clearer functions,
     we can let duo's like stagerunner and objectdiff memorize the changes
     that we make to our data so we can replay our steps and debug what went wrong.</li>
-  <li>Stages are functions that produce a list of stagerunner-compatible
+  <li>Stages are functions that take parameters and produce a list of stagerunner-compatible
   functions (re-read that a few times!). By defining a good set of parameters
   for the data science process and splitting it up into stages like import,
   data, model, export, and more, we gain the power to succintly describe
   how to take a messy, production data set and convert it to a ready-to-deploy
-  model.</li>
+  model. This succint description is created by the data scientist during interactive
+  data analysis but is complete and admissible into a version-controlled
+  codebase so we never have artifacts or scripts lying around.</li>
   <li>The modeling engine provides lots of <a href="https://en.wikipedia.org/wiki/Convention_over_configuration">shortcuts and shorthand</a>
     for rapidly developing models and feature engineering pipelines while
     retaining the flexibility of debugging and testing.</li>
@@ -543,6 +547,13 @@ write a "dashboard" stage.</p>
 
 <p>One last time, enough hype! Let's dive in to a few more features of
 the modeling engine.</p>
+
+<h2>Next Steps</h2>
+
+<ul>
+  <li><a href="tundra.html">Model objects</a></li>
+  <li><a href="director.html">Controllers</a></li>
+</ul>
 
         </div>
         <div class="col2">
