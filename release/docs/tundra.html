@@ -64,7 +64,7 @@ a <b>tundra container</b> (tundra because it freezes your model for production u
 and tundra is in Syberia... get it?).</p>
 
 <p>A tundra container is an R6 object that consists of a <b>munge procedure</b>,
-a <b>train function</b>, a <b>predict function</b> and saved <b>inputs saved during training</b>.
+a <b>train function</b>, a <b>predict function</b> and <b>inputs saved during training</b>.
 The munge procedure is copied directly from the data stage.</p>
 
 <div class="code">
@@ -85,8 +85,8 @@ list(
   </pre>
 </div>
 
-<p>Note that we have added <code class="inline">~ NULL</code>. This is very important to making
-sure the model predicts correctly: we do not want to rename the dependent variables during 
+<p>Note that we have added <code class="inline">~ NULL</code>. This is very important to ensure
+the model predicts correctly: we do not want to rename the dependent variables during 
 prediction nor do we want to create an id column. Now let's execute the model.</p>
 
 <div class="code">
