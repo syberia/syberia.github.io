@@ -130,6 +130,89 @@ readRDS("~/tmp/model.rds")$predict(iris[1:5, ])
 
 <p>You will notice the predictions are the same as before.</p>
 
+<h2>Constructing model objects</h2>
+
+Let's create a model object directly.
+
+<div class="code">
+  <pre>
+    <code class="R">
+    <span class="spacer">
+model <- tundra::tundraContainer$new("lm", function(data) {
+  output$model <- stats::lm(Sepal.Length ~ Sepal.Width, data = data)
+}, function(data) {
+  predict(output$model, data = data)
+})
+model$train(iris)
+model$predict(iris[1, ])          
+    </span>
+    </code>
+  </pre>
+</div>
+
+Let us first note that this is a terrible model specification. The training
+function directly encodes `Sepal.Length ~ Sepal.Width` rather than parametrizing
+the dependent and independent variables. Under the hood, all examples of 
+classifiers in the modeling engine build tundra container objects. 
+
+The general format for a model container is
+
+<div class="code">
+  <pre>
+    <code class="R">
+    <span class="spacer">
+model <- tundra::tundraContainer$new(
+  keyword          = "lm", # Keyword describing the model
+  train_function   = identity, # training function
+  predict_function = identity, # prediction function
+  munge_procedure  = list(), # A list of mungepieces to apply before
+                             # training / prediction.
+  default_args     = list(), # Default training arguments
+  internal         = list()  # A list for specifying additional attributes, e.g.,
+                             # domain-specific metadata for the model.
+)
+    </span>
+    </code>
+  </pre>
+</div>
+
+Note the last three arguments. By default, tundra containers perform no 
+feature engineering on the data given to the train or predict function.
+
+However, it is possible to specify a list of mungepieces that will 
+effectively make the model object capable of handling arbitrarily messy
+production or validation data during prediction: the munge procedure
+simply gets executed using the predict versions of the mungepieces
+prior to running the predict function.
+
+<h2>Help from the modeling engine</h2>
+
+The modeling engine abstracts away the creation of a tundra container
+by following the convention below.
+
+1. **Classifiers**, meaning pairs of train and predict functions on the
+   training data, are specified in the `lib/classifiers` directory
+   by defining a `train` and `predict` local variable representing
+   the training and prediction function, respectively.
+2. Classifiers are *parametrized* by a list which is given to the
+   second argument of the training function. The value given by
+   the "model" key in the model file is a list specifying the
+   parameters to be passed in to the training function.
+
+With these two abstractions in hand, we can cleanly create portable
+model containers that can be used for running validation experiments
+on future distributions of the data or even live in production systems.
+
+<div class="code">
+  <pre>
+    <code class="R">
+    <span class="spacer">
+ 
+    </span>
+    </code>
+  </pre>
+</div>
+
 <h2>Next Steps</h2>
 
 <ul>
