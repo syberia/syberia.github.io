@@ -374,6 +374,18 @@ of "controllers" into existence: even controllers are just another Syberia
 resource and can be rewritten at will; and even <code class="inline">director</code>
 objects can be replaced with more powerful tools for managing R projects.</p>
 
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+cat("I know of these people:", paste(collapse = ", ", project$find("people")), "\n")
+# I know of these people:  people/jimmy, people/maryjane, people/jane
+vapply(project$find("people"), function(p) { as.character(project$resource(p)) }, "")
+#      people/jimmy   people/maryjane       people/jane
+#   "Jimmy Johnson" "Mary-Jane Jones"      "Jane Smith"
+    </span></code>
+  </pre>
+</div>
+
 <h2>Additional director functionality</h2>
 
 <div class="code">
