@@ -391,9 +391,59 @@ vapply(project$find("people"), function(p) { as.character(project$resource(p)) }
 <div class="code">
   <pre>
     <code class="R"><span class="spacer">
+# By default, `find` matches using fuzzy wildcard and is equivalent to
+# the regex: .*p.*.p.*l.*
+project$find("ppl") # [1] "people/jimmy"    "people/maryjane" "people/jane"
+# This is mostly because the author is lazy and likes convenience. Feel
+# free to suggest a change in a pull request or issue in the director package.
+# You can target just subdirectories:
+project$find("ppl", method = "partial") # character(0)
+project$find("people", method = "partial") # [1] "people/jimmy"    "people/maryjane" "people/jane"
+# You can also target for an exact match, at most one result.
+project$find("people", method = "exact") # character(0)
+project$find("people/jimmy", method = "exact") # [1] "people/jimmy"
+
+# You can use `filename` to discover the filename behind a resource.
+unname(vapply(project$find("people"), project$filename, character(1)))
+# [1] "people/jimmy.R" "people/maryjane/maryjane.R" "people/jane.R"
+
+# You can use `exists` to check for resource existence.
+project$exists("people/jimmy") # [1] TRUE
+project$exists("people/jimmyjohns") # [1] FALSE
     </span></code>
   </pre>
 </div>
 
+<p>Some additional more advanced functionality is provided by the
+<code class="inline">syberia_engine</code> object which extends the <code class="inline">director</code>
+object but that is beyond the scope of this introduction. It involves the
+communication of the root project with its dependent engines and locating
+resources across the topology of engines mounted to the root project.</p>
+
+<h2>How director interacts with your project</h2>
+
+<p>Under the hood, you don't have to worry about most of the explicit
+examples in this chapter. The Syberia modeling engine handles almost
+all uses of director objects under the hood. The only real usage 
+you should remember is to call <code class="inline">project$resource("foo")</code>
+when you want to call resource "foo" (e.g., "models/model1", "lib/mungebits/imputer", et cetera).</p>
+<p>The <code class="inline">project</code> global helper is just a 
+shortcut for <code class="inline">syberia::syberia_project()</code>, which
+builds your project from the current working directory into a <code class="inline">syberia_engine</code>
+R6 object and then memoizes (caches) it in memory.</p>
+
+<h2>Next Steps</h2>
+
+<p>You are so close! You can skip straight to the summary, but any great
+aspiring developer will read the section on testing.</p>
+
+<ul>
+  <li><a href="testing.html">Testing</a></li>
+  <li><a href="summary.html">Summary and review</a></li>
+</ul>
 
 <h2>Appendix: Available arguments for preprocessor and parser definitions</h2>
+
+<p>Preprocessors and parsers offer powerful capability for extending the
+vanilla <code class="inline">base::source</code> function.
+
