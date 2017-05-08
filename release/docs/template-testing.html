@@ -141,7 +141,37 @@ is that it cuts off the stagerunner at the end of the data stage.
 We don't want to build a full model, even on a small sample of data,
 and anyway that should be handled by the classifier's tests.</p>
 
-<h2>Continuous integration</h2>
+<h2>Running the full test suite</h2>
+
+<p>To run all the tests in your test directory (your "test suite"), execute the 
+following from the global R console after opening your project:</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+syberia::test_engine()
+    </span></code>
+  </pre>
+</div>
+
+<h2>Next Steps</h2>
+
+<p>You have covered the fundamentals of the Syberia modeling engine
+and its dependencies. Let's proceed to a summary of everything we
+have learned.</p>
+
+<ul>
+  <li><a href="summary.html">Summary and review</a></li>
+</ul>
+
+<h2>Appendix: Test configuration</h2>
+
+<p>Sometimes you may wish to define functions that execute before and 
+after you call <code class="inline">test_project</code>, or before
+and after every individual test. These are called <b>test setup</b>
+and <b>test teardown hooks</b>.
+
+<h2>Appendix: Continuous integration</h2>
 
 <p>The practice of continuous integration refers to running the
 test suite in the cloud using some tool like <a href="">Travis</a>
@@ -186,34 +216,4 @@ notifications:
     </span></code>
   </pre>
 </div>
-
-<h2>Running the full test suite</h2>
-
-<p>To run all the tests in your test directory (your "test suite"), execute the 
-following from the global R console after opening your project:</p>
-
-<div class="code">
-  <pre>
-    <code class="R"><span class="spacer">
-syberia::test_engine()
-    </span></code>
-  </pre>
-</div>
-
-<h2>Next Steps</h2>
-
-<p>You have covered the fundamentals of the Syberia modeling engine
-and its dependencies. Let's proceed to a summary of everything we
-have learned.</p>
-
-<ul>
-  <li><a href="summary.html">Summary and review</a></li>
-</ul>
-
-<h2>Appendix: Test configuration</h2>
-
-<p>Sometimes you may wish to define functions that execute before and 
-after you call <code class="inline">test_project</code>, or before
-and after every individual test. These are called <b>test setup</b>
-and <b>test teardown hooks</b>.
 
