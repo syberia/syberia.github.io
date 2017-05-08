@@ -5,53 +5,86 @@ package aimed at simplifying management of large R projects.</p>
 
 <p>By default, most R projects are collections of loosely organized scripts. A
 newcomer to the project would have to rely on very thorough documentation to understand
-how the executable tasks fit together and how to replicate and expand on any analysis.</p>
+how the executable tasks fit together and how to replicate and expand on any analysis.
+Using notebooks like Jupyter just makes the problem worse: hard to inspect in code
+reviews and encouraging messy watch-and-see-what-you-get scripting, notebooks
+suck the developer right out of our analyst bones.</p>
+
+<p>If you just want to roll up your sleeves and get to work, feel free to skip this
+section and move on to <a href="">testing</a> (a software developer wrote this guide;
+we won't let you skip testing!). A high-level understanding of how Syberia projects
+manage stuff under the hood is helpful for expanding your horizon to more than
+just the functionality packaged with the modeling engine.</p>
 
 <p>In Syberia, we rely on <a href="">convention over configuration</a>, a common design
 pattern in software frameworks that removes some leeway in the organizational structure
 in exchange for something incredibly powerful: all R developers working in Syberia projects
 will share common knowledge about how work is organized.</p>
 
+<h2>The modeling engine conventions</h2>
+
 <p>In particular, the <a href="">modeling engine</a> that currently comes bundled as
 the default engine for structured supervised learning projects such as regression and
 classification sets up a few conventions which all modeling engine projects conform to:</p>
 
 <p><ul>
-  <li>The <b>models</b> directory holds all models for a given project. Each file is
-  an R script that ends with a <code>list</code> object which hyper-parameterizes the
+  <li><p>The <b>models</b> directory holds all models for a given project. Each file is
+  an R script that ends with a list object which hyper-parameterizes the
   data science process into a linear sequence of stages. All the conventions below are
   the recipe ingredients that turn model files from static lists to living, breathing
-  objects defining a dynamic modeling pipeline.</li>
-  <li>The <b>lib/adapters</b> directory defines IO (input and output) mechanisms for data
+  objects defining a dynamic modeling pipeline.</p>
+  <p>In the current modeling engine incarnation, these are <a href="">stagerunners</a>,
+  R6 objects that tie together all aspects of the modeling process&mdash;but in the future
+  we may release support for distributed backends and engines such as Spark or Tensorflow.
+  Let's humbly learn how to walk before we run.</p></li>
+  <li><p>The <b>lib/adapters</b> directory defines IO (input and output) mechanisms for data
   and serialized model objects. For example, data might be read in CSV format, from a
   database or data warehouse, or simply reside in-memory. Data and model objects may
-  be written to a file, to a cloud storage service, or pushed via HTTP to an API.</li>
-  <li>The <b>lib/mungebits</b> directory defines mungebits, already familiar from an
+  be written to a file, to a cloud storage service, or pushed via HTTP to an API.</p></li>
+  <li><p>The <b>lib/mungebits</b> directory holds mungebits, already familiar from an
   earlier lesson, which define feature engineering templates that transform dataframes
-  to dataframes.</li>
-  <li>The <b>lib/stages</b> directory is a collection of modeling stages, by default
+  to dataframes. In the future, we may extend the notion of mungebits to distributed
+  settings such as Spark, Tensorflow or Hadoop and even explore graphical or other 
+  forms of data manipulation and computation&mdash;but development will stay nice and cozy within R.</p></li>
+  <li><p>The <b>lib/stages</b> directory is a collection of modeling stages, by default
   <i>import</i>, <i>data</i>, <i>model</i>, and <i>export</i>. The complex logic that
   defines how to process the parameters in the modeling file lives in these stages: 
   each R file in this directory is a functional, a function that returns another function,
-  namely, a function that takes in the parameters from the model file and spits out a
-  transformation of an environment that performs the appropriate operations of the stage.</li>
-  <li>The <b>lib/classifiers</b> directory is responsible for housing all the training and
+  namely, a function that takes in the parameters from the model file under the given stage key and spits out a
+  transformation of an environment that performs the appropriate operations of the stage.</p>
+  
+  <p>For example, import stage may read from a CSV file whereas model stage may construct
+  a <a href="">tundra container</a> and then call its predict method.</p></li>
+  <li><p>The <b>lib/classifiers</b> directory is responsible for housing all the training and
   prediction functions for various statistical classifiers: linear regression, random forest,
   gradient boosting machines, support vector machines, et cetera. These are responsible for
   the construction of a <i> model object</i>, a serializable R object that represents all
   meta-data required to replicate the scoring of outputs on new validation sets or real-time
-  data.</li>
+  data.</p></li>
 </ul></p>
 
-<p>The following conventions are established by the <a href="">base engine</a>, which is
-more general than the modeling engine and serves as the clay for almost all future Syberia
-engines. For example, unsupervised learning, natural language processing, scientific research,
+<p>Note that while in the current convention modeling remains in-memory and finitely bound,
+this is not a given. If the syntax is sharp and compact, we may replace backends from
+the current in-memory R approach to acting as a distributed command center for millions
+of machines, but experimentation on local slices of the data can remain in one of the most
+powerful interactive consoles we know: the R interpreter.</p>
+
+<p>The above conventions are not exhaustive. Several are inherited from the parent engine
+of the modeling engine: the base engine. The conventions established in the list below are defined by the
+<a href="">base engine</a>, which is more general than the modeling engine and serves as the
+clay for almost all future Syberia engines. In case you are wondering, do not worry, at the
+present moment the topology is simple and linear: your project makes use of the modeling engine, which makes
+use of the base engine, which relies on the Syberia package.</p>
+<p>Future larger projects may
+have complex intertwined engines for a variety of machine learning and business tasks, but
+for the moment, once again, let us walk before we run.</p>
+<p>For example, unsupervised learning, natural language processing, scientific research,
 dashboarding and business intelligence, trading and finance, may all require different
-conventions which differ somewhat or drastically from the structured supervised learning
-problem. Building on top of the base engine allows for some very powerful meta-conventions:</p>
+conventions which differ somewhat or drastically from the structured supervised learning problem.
+Building on top of the base engine allows for some very powerful meta-conventions:</p>
 
 <p><ul>
-  <li>The <b>config/routes</b> resource (typically just a routes.R file) established the
+  <li>The <b>config/routes</b> resource (typically just a routes.R file) establishes the
   link between the <b>lib/controllers</b> directory and the rest of the project: it tethers
   together which directories are processed by which controllers.</li>
   <li><p>The <b>lib/controllers</b> directory forms the heart of Syberia's expansive
@@ -74,5 +107,8 @@ problem. Building on top of the base engine allows for some very powerful meta-c
   establishing R as a true player in the "general purpose programming language" 
   sector. It is, after all, just a LISP--a rather powerful one at that.</li>
 </ul></p>
+
+<p>Philosophical asides beside, let's examine how a director object helps us 
+generalize our thinking about R projects with some more concrete examples.</p>
   
 
