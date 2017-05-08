@@ -39,6 +39,58 @@ the tools the engine provides and are ready to do some
 modeling work. As the Syberia ecosystem matures, we hope to
 provide more guides for other yet-to-be-built engines that simplify the various
 domains of expertise covered by R and CRAN.</p>
+
+<p>The modeling engine provides basic capabilities for the following
+simplified workflow.</p>
+
+<p><ul>
+<li>Importing data sets from arbitrary sources.</li>
+<li>Cleaning the data by picking the relevant parameters for mungebits.</li>
+<li>Applying a statistical method to the cleaned data.</li>
+<li>Exporting the model object to a persistent storage layer for later use.</li>
+</ul></p>
+
+<p>Note that validation and cross-validation are not built into this workflow
+but can be incorporated through additional tools and functions. Each model and
+academic or business question may require its own validation strategy, 
+so simple tools like AUC and classification error may not be sufficient. However,
+the final model object should be sufficient for validating on out-of-sample data
+and can be used to tune the parameters laid out earlier in the process.</p>
+
+<h2>The modeling engine</h2>
+
+<p>Armed with the <a href="">example modeling project</a>, we learned that
+the modeling engine gives us the power to:</p>
+
+<p><ul>
+<li>The <b>lib/adapters</b> directory for importing and exporting R objects such
+  as data and model objects. Files here should contain <code class="inline">write</code>
+  and <code class="inline">read</code> variables providing functions for reading and
+  writing R objects in the desired format.</li>
+<li>The <b>lib/mungebits</b> directory for defining feature engineering templates.
+  These files should have a <code class="inline">train</code> and
+  <code class="inline">predict</code> variable giving the function that
+  must be used during training versus validation and production, respectively.</li>
+<li>The <b>lib/stages</b> directory for specifying custom stages. By default,
+  the modeling engine comes bundled with <i>import</i>, <i>data</i>, <i>model</i>,
+  and <i>export</i> stage. Typically you won't need to touch this until more
+  advanced functionality is required in your modeling projects.</li>
+<li>The <b>lib/classifiers</b> directory for specifying statistical methods
+  on cleaned data sets. Files here come with a <code class="inline">train</code>
+  and <code class="inline">predict</code> variable just like in mungebits, except
+  that the arguments have different meanings.</li>
+<li><p>The <b>models</b> directory ties everything together. By loose convention,
+  models in development should be placed in <b>models/dev</b> and models in
+  production (or finalized for other business uses or publication) should be placed
+  in <b>models/prod</b>.</p>
+  <p>Files in the models directory follow the grammar specified throughout this
+  guide. The last expression in each model file should be a static list object
+  with keys <code class="inline">c("import", "data", "model", "export")</code>
+  outlining the hyper-parameters for the end-to-end modeling process. Calling
+  <code class="inline">project$resource</code> on a model resource produces
+  a stagerunner R6 object.</p></li>
+</ul>
+
         </div>
         <div class="col2">
           <br /> <br /> <br />
