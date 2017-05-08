@@ -154,11 +154,11 @@ Let us start from the beginning and open a vanilla R session from the terminal:
 <div class="code">
   <pre>
     <code class="R"><span class="spacer">
-devtools::install_github("syberia/director") # Install directory into the global library.
+devtools::install_github("syberia/director") # Install director into the global library.
 library(director)
 dir <- tempdir()
 project <- director(dir)
-project # Director object monitoring ‘temporary director’.
+project # Director object monitoring 'temporary director'.
     </span></code>
   </pre>
 </div>
@@ -181,6 +181,7 @@ methods are <code class="inline">exists, filename, find, root</code> and
     <code class="R"><span class="spacer">
 # Write "cat('Hello world!')" into hello.R at the root of the project.
 # You can also do this using a text editor.
+# Note: `project$root()` is equivalent to `dir` from earlier, if not a little clearer.
 writeLines("cat('Hello world!')", file.path(project$root(), "hello.R"))
 # Our project now recognizes hello.R as a "hello" resource.
 project$find() # [1] "hello"
@@ -222,14 +223,16 @@ R was simply not designed with large architectures in mind.</p>
 <p>However, there is a neat solution. We take a page out of the books of
 <a href="">require.js</a> and node.js and allow each director object a very
 specific convention: if a file (ignoring extension) has the same name as its
-parent directory, it gets treated as an idempotent resources, meaning that
+parent directory, it gets treated as an idempotent resource, meaning that
 the other files in that directory are <b>helper files</b> which become invisible
 to the director object.</p>
 
 <p>These helper files are implicitly understood to be available
 to the main file for its final construction, but otherwise should not be
 treated as Syberia resources, that is, should not be made available as modular
-pieces for re-use within the rest of the project.</p>
+pieces for re-use within the rest of the project. If you find yourself
+needing to make use of them, it is a good indication that they deserve
+the title of their own distinct resource.</p>
 
 <div class="code">
   <pre>
@@ -244,7 +247,8 @@ project$filename("world")
 
 <p>The director object keeps track of the fact that the "world" resource
 is in fact at "world/world.R". This is a virtual construction which maps
-either to "world.R" or "world/world.R".</p>
+either to "world.R" or "world/world.R" depending on the name of the parent
+directory of "world.R".</p>
 
 <div class="code">
   <pre>
@@ -259,10 +263,11 @@ project$resource("world")
 both "world/hello.R" and "world/world.R".</p>
 
 <p>The usage of the Ramd package was for the <code class="inline">Ramd::define</code>
-function, which allows a convention syntax for sourcing adjacent files. Note
+function, which allows a convenient syntax for sourcing adjacent files. Note
 these files are truly <i>sourced</i> using <code class="inline">base::source</code>
 and are pure helper R scripts&mdash;they do not benefit from the preprocessor
-or parser magic in director that we are about to introduce!</p>
+or parser magic in director that we are about to introduce! (This is a frequent
+source of bizarre bugs and stack traces and merits explicit mention.)</p>
 
 <h2>Preprocessors and parsers</h2>
 
@@ -336,11 +341,11 @@ of the file and pass it as arguments to <code class="inline">utils::person</code
   <pre>
     <code class="R"><span class="spacer">
 dir.create(file.path(project$root(), "people", "maryjane"))
-writeLines("mary <- 'Mary'; jane <- 'Jane'; paste(mary, jane, sep = '-')",
+writeLines("mary &lt;- 'Mary'; jane &lt;- 'Jane'; paste(mary, jane, sep = '-')",
            file.path(project$root(), "people", "maryjane", "mj.R"))
 writeLines("Ramd::define('mj', function(mj) { c(mj, 'Jones') })",
            file.path(project$root(), "people", "maryjane", "maryjane.R"))
-maryjane <- project$resource("people/maryjane")
+maryjane &lt;- project$resource("people/maryjane")
 maryjane # [1] "Mary-Jane Jones"
 class(maryjane) # "person"
     </span></code>
@@ -351,10 +356,22 @@ class(maryjane) # "person"
 <code class="inline">mary</code>, but she is still a great example of a
 <code class="inline">person</code>.</p>
 
+<p>So far, we have encountered an example of a parser. We can also do additional
+work before sourcing the file, such as injecting helper functions (maybe even
+recursively composed of other Syberia resources.)</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+project$register_preprocessor("people", function(output) {
+  do.call(utils::person, as.list(output))
+})
+    </span></code>
+  </pre>
+</div>
 
 
-  
-
+<h2>Appendix: Available arguments for preprocessor and parser definitions</h2>
         </div>
         <div class="col2">
           <br /> <br /> <br />
