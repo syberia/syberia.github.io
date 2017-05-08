@@ -92,7 +92,7 @@ r <- stagerunner$new(list2env(list(data = iris)), list(
   "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
 ))
 r$run()
-    </code>
+    </span></code>
   </pre>
 </div>
 
@@ -115,7 +115,7 @@ r <- stagerunner$new(env, list(
   "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
 ))
 r$run(1); r$run(1); r$run(1)
-    </code>
+    </span></code>
   </pre>
 </div>
 
