@@ -102,6 +102,8 @@ the current in-memory R approach to acting as a distributed command center for m
 of machines, but experimentation on local slices of the data can remain in one of the most
 powerful interactive consoles we know: the R interpreter.</p>
 
+<h2>The base engine</h2>
+
 <p>The above conventions are not exhaustive. Several are inherited from the parent engine
 of the modeling engine: the base engine. The conventions established in the list below are defined by the
 <a href="">base engine</a>, which is more general than the modeling engine and serves as the
@@ -125,11 +127,11 @@ Building on top of the base engine allows for some very powerful meta-convention
   over configurations, whilst suitably recognizing that the taxonomy of
   <a href="">computing tasks</a> may require different conventions to optimally iterate
   on its given set of problems, the notion of a <i>controller</i> allows us to
-  <i>generalize how R works</i>. In the old way, we would use <code>base::source</code>
+  <i>generalize how R works</i>. In the old way, we would use <code class="inline">base::source</code>
   to execute an R file and store the value of its last expression in a local variable.</p>
   <p>Controllers allow us to define <i>preprocessors</i> and <i>parsers</i>. A preprocessor
   is a function that specifies everything <i>before</i> we execute an R file and a parser
-  is a function that specifies everything <i>after</i> we execute an R file--in a 
+  is a function that specifies everything <i>after</i> we execute an R file&mdash;in a 
   given directory. In effect, controllers allow us to establish heterogeneous DSLs
   (domain-specific languages) in a hierarchical directory structure in a way that
   most optimally conforms to how we wish to solve a particular problem, whether it be
@@ -138,11 +140,219 @@ Building on top of the base engine allows for some very powerful meta-convention
   will display when fully unlocking the power of controllers: let the domain-specific
   languages flood out the rigidity of CRAN and the constraints of packages, thus
   establishing R as a true player in the "general purpose programming language" 
-  sector. It is, after all, just a LISP--a rather powerful one at that.</li>
+  sector. It is, after all, just a LISP&mdash;a rather powerful one at that.</li>
 </ul></p>
 
 <p>Philosophical asides beside, let's examine how a director object helps us 
 generalize our thinking about R projects with some more concrete examples.</p>
+
+<h2>The most basic director object</h2>
+
+Let us start from the beginning and open a vanilla R session from the terminal:
+<code class="inline">R --vanilla</code>.
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+devtools::install_github("syberia/director") # Install directory into the global library.
+library(director)
+dir <- tempdir()
+project <- director(dir)
+project # Director object monitoring ‘temporary director’.
+    </span></code>
+  </pre>
+</div>
+
+<p>We have in our hands a director object! Note the <code class="inline">class(project)</code>.
+Under the hood, Syberia manages the creation of a director object when your R session
+starts and <code class="inline">syberia::syberia_project()</code> is called: this last 
+expression returns a <code class="inline">syberia_engine</code> R6 object which inherits
+from the <code class="inline">director</code> R6 class and expands on the vanilla functionalities
+of a director object.</p>
+
+<p>Let's see what our object can do: <code class="inline">ls(project)</code>. The noteworthy
+methods are <code class="inline">exists, filename, find, root</code> and
+<code class="inline">resource</code>.</p>
+
+<p>Let's create an R file in our temporary project and see what happens.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# Write "cat('Hello world!')" into hello.R at the root of the project.
+# You can also do this using a text editor.
+writeLines("cat('Hello world!')", file.path(project$root(), "hello.R"))
+# Our project now recognizes hello.R as a "hello" resource.
+project$find() # [1] "hello"
+# Executing the resource gives us what we expect.
+project$resource("hello") # Hello world!NULL
+# We have a NULL at the end the return value of the cat function is NULL.
+    </span></code>
+  </pre>
+</div>
+
+<p>By default, the <code class="inline">resource</code> method acts as a slightly more
+powerful <code class="inline">source</code>.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+devtools::install_github("robertzk/Ramd") # Install the Ramd package for the 'define' helper.
+# Create dir/world
+dir.create(file.path(project$root(), "world"))
+# Write to dir/world/world.R
+writeLines("Ramd::define('hello', function(hello) { cat(hello, 'world!') })",
+           file.path(project$root(), "world", "world.R"))
+writeLines("'hello'", file.path(project$root(), "world", "hello.R"))
+project$find() # [1] "world" "hello"
+    </span></code>
+  </pre>
+</div>
+
+<p>Note that <code class="inline">find</code> does not produce results in alphabetical
+order. The resources are ordered by which ones were modified most recently.</p>
+
+<p>In the above example, we illustrated one of the most powerful concepts in
+director: <b>idempotent resources</b>. Many dynamic scripting languages like JavaScript
+or R have found themselves at the forefront of popular usage without 
+the language designer anticipating their growth in complexity. In R projects,
+we typically find it hard to organize our work sometimes because, like JavaScript,
+R was simply not designed with large architectures in mind.</p>
+
+<p>However, there is a neat solution. We take a page out of the books of
+<a href="">require.js</a> and node.js and allow each director object a very
+specific convention: if a file (ignoring extension) has the same name as its
+parent directory, it gets treated as an idempotent resources, meaning that
+the other files in that directory are <b>helper files</b> which become invisible
+to the director object.</p>
+
+<p>These helper files are implicitly understood to be available
+to the main file for its final construction, but otherwise should not be
+treated as Syberia resources, that is, should not be made available as modular
+pieces for re-use within the rest of the project.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list.files(project$root(), recursive = TRUE)
+# "hello.R"       "world/hello.R" "world/world.R"
+project$filename("world")
+# [1] "world/world.R"
+    </span></code>
+  </pre>
+</div>
+
+<p>The director object keeps track of the fact that the "world" resource
+is in fact at "world/world.R". This is a virtual construction which maps
+either to "world.R" or "world/world.R".</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+project$resource("world")
+# hello world!NULL
+    </span></code>
+  </pre>
+</div>
+
+<p>Our resource has been pieced together from the world directory using
+both "world/hello.R" and "world/world.R".</p>
+
+<p>The usage of the Ramd package was for the <code class="inline">Ramd::define</code>
+function, which allows a convention syntax for sourcing adjacent files. Note
+these files are truly <i>sourced</i> using <code class="inline">base::source</code>
+and are pure helper R scripts&mdash;they do not benefit from the preprocessor
+or parser magic in director that we are about to introduce!</p>
+
+<h2>Preprocessors and parsers</h2>
+
+<p>Continuing with the example from the previous section, let's add some flair
+to our project.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+john <- utils::person("John", "Doe")
+john # "John Doe"
+class(john) # "person"
+    </span></code>
+  </pre>
+</div>
+
+<p>We use the simplest illustrative structure we know of: the utils package's
+definition of a <code class="inline">person</code> S3 class. Imagine we
+want to define a convention that all files in the "people" directory
+must return a <code class="inline">c("first name", "last name")</code> 
+character vector and create a person object. It would be annoying and
+repetitive to write <code class="inline">utils::person("first name", "last name")</code>
+in each file, and anyway we may wish to replace the base definition with another
+class down the road. (See <a href="">don't repeat yourself</a>.)</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+dir.create(file.path(project$root(), "people"))
+writeLines('c("Jane", "Smith")', file.path(project$root(), "people/jane.R"))
+jane <- project$resource("people/jane")
+jane # [1] "Jane" "Smith"
+class(jane) # "character"
+    </span></code>
+  </pre>
+</div>
+
+<p>So far, we have not accomplished our objective: <code class="inline">jane</code>
+is still a lowly character vector, not a <code class="inline">person</code>.
+To animate her like Pinnocchio, we shall define a parser on the director object.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+project$register_parser("people", function(output) {
+  do.call(utils::person, as.list(output))
+})
+    </span></code>
+  </pre>
+</div>
+
+<p>Now let's try again.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+jane <- project$resource("people/jane")
+jane # [1] "Jane Smith"
+class(jane) # "person"
+    </span></code>
+  </pre>
+</div>
+
+<p>What a lovely lady <code class="inline">jane</code> now has become! By
+calling <code class="inline">register_parser</code> on the <code class="inline">project</code>,
+we have implicitly told our director to, going forward, treat all
+files in the "people" directory with the convention: take the output
+of the file and pass it as arguments to <code class="inline">utils::person</code>.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+dir.create(file.path(project$root(), "people", "maryjane"))
+writeLines("mary <- 'Mary'; jane <- 'Jane'; paste(mary, jane, sep = '-')",
+           file.path(project$root(), "people", "maryjane", "mj.R"))
+writeLines("Ramd::define('mj', function(mj) { c(mj, 'Jones') })",
+           file.path(project$root(), "people", "maryjane", "maryjane.R"))
+maryjane <- project$resource("people/maryjane")
+maryjane # [1] "Mary-Jane Jones"
+class(maryjane) # "person"
+    </span></code>
+  </pre>
+</div>
+
+<p>As you can see, <code class="inline">maryjane</code> is more complex than
+<code class="inline">mary</code>, but she is still a great example of a
+<code class="inline">person</code>.</p>
+
+
+
   
 
         </div>
