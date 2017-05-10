@@ -1,0 +1,219 @@
+<h1>Testing, testing, testing!</h1>
+
+<p>The most important feature of any large software project is the test suite
+for very well understood reasons: it lowers the complexity of the project
+from constant linear growth proportional to the number of files to 
+a manageable constant.</p>
+
+<p>Put more simply, if you have great tests that cover your entire project
+then you never have to worry whether something somewhere breaks: that
+will be identified by the failures in the test suite.</p>
+
+<p>For those new to test-driven development, we recommend the
+<a href="">section on testing</a> from Hadley's Advanced R book.</p>
+
+<h2>Defining tests</h2>
+
+<p>Let's begin with a concrete example. Make sure you are back in
+the example.sy project from earlier sections.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# Place this in lib/mungebits/imputer.R
+train &lt;- function(data) {
+  numeric_columns &lt;- vapply(data,
+    function(x) is.numeric(x) && any(is.na(x)), logical(1))
+  input$columns &lt;- colnames(data)[numeric_columns]
+  input$means &lt;- list()
+  data[numeric_columns] &lt;- lapply(input$columns, function(column) {
+    input$means[[column]] &lt;- mean(data[[column]], na.rm = TRUE)
+    col &lt;- data[[column]]
+    col[is.na(col)] &lt;- input$means[[column]]
+    col
+  })
+  data
+}
+
+predict &lt;- function(data) {
+  data[input$columns] &lt;- lapply(input$columns, function(column) {
+    col &lt;- data[[column]]
+    col[is.na(col)] &lt;- input$means[[column]]
+    col
+  })
+  data
+}
+    </span></code>
+  </pre>
+</div>
+
+<p>We can test that our imputer mungebit behaves as expected.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+mungebit &lt;- project$resource("lib/mungebits/imputer")
+iris[1, 1] <- NA
+iris2 &lt;- mungebit$train(iris)
+stopifnot(mungebit$predict(iris)[1, 1] == mean(iris[-1, 1]))
+    </span></code>
+  </pre>
+</div>
+
+<p>We have verified by hand that the imputer mungebit works for one
+particular example. To ensure that it remains valid even if data scientists
+modify the definition of the imputer later, we should place the
+above check in a test file.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# test/lib/mungebits/imputer.R
+test_that("it imputes a simple example correctly during training", {
+  mungebit &lt;- resource() 
+  iris[1, 1] <- NA
+  expect_equal(mungebit$train(iris)[1, 1], mean(iris[-1, 1]))
+})
+
+test_that("it imputes a simple example correctly during prediction", {
+  mungebit &lt;- resource() 
+  iris[1, 1] &lt;- NA
+  mungebit$train(iris)
+  expect_equal(mungebit$predict(iris)[1, 1], mean(iris[-1, 1]))
+})
+    </span></code>
+  </pre>
+</div>
+
+<p>Note the <code class="inline">resource</code> helper available in
+test files which is equivalent to calling <code class="inline">project$resource</code>
+on the current filename without the leading <code class="inline">"test/"</code>.
+In other words, even testing enforces a convention: the test for a given
+resource should be the filename of that resource located within the
+test directory.</p>
+
+<p>Using the <code class="inline">stest</code> helper provided by the
+modeling engine, we can check that our mungebit behaves as expected.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+stest("lib/mungebits/imputer")
+# ..
+# DONE
+    </span></code>
+  </pre>
+</div>
+
+<p>In general, all resources in a project should have accompanying tests.
+If you find it difficult to test a resource, it probably indicates that
+you haven't broken it down enough or exposed sufficient mocking, stubbing
+and other test engineering ideas. (These are more advanced concepts you
+can Google, but applying them to Syberia projects is still an ongoing
+open question.)</p>
+
+<h2>Where do tests come from?</h2>
+
+<p>The magic behind tests is the same as that of any other Syberia
+file: tests are defined by a tests controller in the base package,
+and thus tests for just another resource.</p>
+
+<p>To check out how the base engine defines testing, see the
+<a href="">test controller</a>.</p>
+
+<h2>Testing models</h2>
+
+<p>Because models form complicated execution pipelines, testing them
+is not so straightforward. By default, the modeling engine comes
+with a <a href="">models test controller</a>. This test controller
+says that each model shall cache the last 100 rows of data after
+running import stage and save the highly downsampled dataframe
+to a directory in <code class="inline">test/models/.registry</code>.</p>
+
+<p>If this sounds funky, it's because it relies on a well-understood
+testing design pattern. Rather than repulling data when running
+the models in the full test suite, we store a tiny sample of the
+data and only use that to test the data pipeline. Otherwise it
+might take a very long time to run all the tests!</p>
+
+<p>The other convention established by the models test controller
+is that it cuts off the stagerunner at the end of the data stage.
+We don't want to build a full model, even on a small sample of data,
+and anyway that should be handled by the classifier's tests.</p>
+
+<h2>Running the full test suite</h2>
+
+<p>To run all the tests in your test directory (your "test suite"), execute the 
+following from the global R console after opening your project:</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+syberia::test_engine()
+    </span></code>
+  </pre>
+</div>
+
+<h2>Next Steps</h2>
+
+<p>You have covered the fundamentals of the Syberia modeling engine
+and its dependencies. Let's proceed to a summary of everything we
+have learned.</p>
+
+<ul>
+  <li><a href="summary.html">Summary and review</a></li>
+</ul>
+
+<h2>Appendix: Test configuration</h2>
+
+<p>Sometimes you may wish to define functions that execute before and 
+after you call <code class="inline">test_project</code>, or before
+and after every individual test. These are called <b>test setup</b>
+and <b>test teardown hooks</b>.
+
+<h2>Appendix: Continuous integration</h2>
+
+<p>The practice of continuous integration refers to running the
+test suite in the cloud using some tool like <a href="">Travis</a>
+every time that code changes are committed to the codebase.</p>
+
+<p>Projects built on top of the Syberia modeling engine make it
+easy to add continuous integration to any modeling project. Follow
+the instructions on <a href="">how to enable travis for your repository</a>
+and put the file below in <code class="inline">".travis.yml"</code> at
+the root of your project. Non-Travis continuous integration services
+like a local Jenkins setup may require a different configuration.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# Place this in .travis.yml in the root of your Syberia modeling project.
+language: c
+sudo: false
+addons:
+  apt:
+    sources:
+      - r-packages-precise
+    packages:
+      - r-base-dev
+      - r-recommended
+      - pandoc
+env:
+  - global:
+    - TRAVIS=true
+    - R_LIBS_USER=~/.R/library
+cache:
+  directories:
+    ~/.R
+before_script:
+  - rm -rf "/home/travis/.R/.syberia"
+  - mkdir -p "$R_LIBS_USER"
+script: "Rscript -e 'library(syberia); library(methods); devtools::with_options(list(stub = 1), force); syberia::syberia_engine(); quit(status = tryCatch({ syberia::test_engine(); 0 }, error = function(e) { message(e); message(bettertrace::stacktrace()); 1 }));'"
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+    </span></code>
+  </pre>
+</div>
+
