@@ -256,7 +256,7 @@ valid.</p>
 # test/lib/mungebits/remove_uncommon_values.R
 test_that("it does not replace a common value", {
   bit <- resource()
-  iris$Species <- as.character(iris$Species)
+  iris$Species &lt;- as.character(iris$Species)
   # Test the mungebit when it is training.
   expect_equal(as.character(bit$run(iris, "Species")[1, 5]), "setosa")
   stopifnot(bit$trained())

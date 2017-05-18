@@ -276,7 +276,7 @@ need to write a separate data pipeline for each model as to be
 very careful about these sorts of edge cases. Incorrectly failing 
 to replace a value could lead to bizarre bugs in our classifier
 when the column gets converted to a categorical feature. Instead, the unified
-<code class="inline"> bit$run(...) </code> interface means the only
+<code class="inline">bit$run(...)</code> interface means the only
 time we will ever have to think about the train versus predict
 distinction is when we are writing our mungebit.</p>
 
@@ -289,7 +289,7 @@ valid.</p>
 # test/lib/mungebits/remove_uncommon_values.R
 test_that("it does not replace a common value", {
   bit <- resource()
-  iris$Species <- as.character(iris$Species)
+  iris$Species &lt;- as.character(iris$Species)
   # Test the mungebit when it is training.
   expect_equal(as.character(bit$run(iris, "Species")[1, 5]), "setosa")
   stopifnot(bit$trained())
