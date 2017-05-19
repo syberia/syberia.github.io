@@ -24,7 +24,7 @@ Alternatively, we can use the model object to generate validation scores on new
 samples from the original distribution, e.g., when new customers arrive or when
 we get additional data.</p>
 
-<h2>The tundra container</h2>
+<h2><a name="container">The tundra container</a></h2>
 
 <p>The default model object container that ships with the modeling engine is
 a <b>tundra container</b> (tundra because it freezes your model for production use,
@@ -75,7 +75,7 @@ also inspect how the model is munging the data using <code class="inline">model$
 or even execute just a subset of the munge procedure using <code class="inline">model$munge(iris, 1)</code>,
 <code class="inline">model$munge(iris, 1:2)</code>, <code class="inline">model$munge(model$munge(iris, 1), 2)</code>, etc. This can be very helpful for debugging.</p>
 
-<h2>Serialization of model objects</h2>
+<h2><a name="serialization">Serialization of model objects</a></h2>
 
 <p>R is a LISP which means that most R objects, including model objects, are recursively
 composed of lists and atomic vectors. This makes serialization very easy in R! In fact,
@@ -97,9 +97,9 @@ readRDS("~/tmp/model.rds")$predict(iris[1:5, ])
 
 <p>You will notice the predictions are the same as before.</p>
 
-<h2>Constructing model objects</h2>
+<h2><a name="construction">Constructing model objects</a></h2>
 
-Let's create a model object directly.
+<p>Let's create a model object directly.</p>
 
 <div class="code">
   <pre>
@@ -117,12 +117,12 @@ model$predict(iris[1, ])
   </pre>
 </div>
 
-Let us first note that this is a terrible model specification. The training
+<p>Let us first note that this is a terrible model specification. The training
 function directly encodes `Sepal.Length ~ Sepal.Width` rather than parametrizing
 the dependent and independent variables. Under the hood, all examples of 
-classifiers in the modeling engine build tundra container objects. 
+classifiers in the modeling engine build tundra container objects. </p>
 
-The general format for a model container is
+<p>The general format for a model container is</p>
 
 <div class="code">
   <pre>
@@ -143,32 +143,36 @@ model <- tundra::tundraContainer$new(
   </pre>
 </div>
 
-Note the last three arguments. By default, tundra containers perform no 
-feature engineering on the data given to the train or predict function.
+<p>Note the last three arguments. By default, tundra containers perform no 
+feature engineering on the data given to the train or predict function.</p>
 
-However, it is possible to specify a list of mungepieces that will 
+<p>However, it is possible to specify a list of mungepieces that will 
 effectively make the model object capable of handling arbitrarily messy
 production or validation data during prediction: the munge procedure
 simply gets executed using the predict versions of the mungepieces
-prior to running the predict function.
+prior to running the predict function.</p>
 
-<h2>Help from the modeling engine</h2>
+<h2><a name="engine">Help from the modeling engine</a></h2>
 
-The modeling engine abstracts away the creation of a tundra container
-by following the convention below.
+<p>The modeling engine abstracts away the creation of a tundra container
+by following the convention below.</p>
 
-1. **Classifiers**, meaning pairs of train and predict functions on the
-   training data, are specified in the `lib/classifiers` directory
-   by defining a `train` and `predict` local variable representing
-   the training and prediction function, respectively.
-2. Classifiers are *parametrized* by a list which is given to the
+<p>
+<ul><li><b>Classifiers</b>, meaning pairs of train and predict functions on the
+    training data, are specified in the <code class="inline">lib/classifiers</code> directory
+    by defining a <code class="inline">train</code> and 
+    <code class="inline">predict</code> local variable representing
+    the training and prediction function, respectively.</li>
+  <li>Classifiers are <i>parametrized</i> by a list which is given to the
    second argument of the training function. The value given by
    the "model" key in the model file is a list specifying the
-   parameters to be passed in to the training function.
+   parameters to be passed in to the training function.</li>
+</ul>
+</p>
 
-With these two abstractions in hand, we can cleanly create portable
+<p>With these two abstractions in hand, we can cleanly create portable
 model containers that can be used for running validation experiments
-on future distributions of the data or even live in production systems.
+on future distributions of the data or even live in production systems.</p>
 
 <div class="code">
   <pre>
@@ -190,7 +194,7 @@ on future distributions of the data or even live in production systems.
 
 <code class="inline"></code>
 
-<h2>Appendix: Model deflation</h2>
+<h2><a name="deflation" style="font-weight: normal">Appendix: Model deflation</a></h2>
 
 <p>R's easy serialization capability seems like a free lunch but there is a dangerous
 trade-off. If you use environments or functions (which implicitly have an environment

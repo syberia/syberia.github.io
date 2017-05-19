@@ -9,14 +9,19 @@ body {
 div.header {
   margin: 0 auto;
   padding: 0;
-  width: 1000px;
   padding-top: 25px;
   text-align: left;
+}
+
+div.header a {
+  color: #3d8bd2;
+  text-decoration: none;
 }
 
 div.header-left {
   float: left;
   padding-top: 15px;
+  padding-left: 50px;
   font-size: 18px;
   font-weight: 600;
   color: #3d8bd2;
@@ -26,6 +31,7 @@ div.header-left {
 div.header-right {
   color: #3d8bd2;
   float: right;
+  padding-right: 50px;
 }
 
 div.header ul {
@@ -331,4 +337,13 @@ code.inline, pre.inline {
   margin: 0;
 }
 
+ul.table-of-contents {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul.table-of-contents ul {
+  list-style: none;
+  padding-left: 20px;
+}
 
