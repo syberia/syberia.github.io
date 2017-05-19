@@ -5,11 +5,11 @@
     <script type="text/javascript">try { Typekit.load({ async: true }); } catch(e) { }</script>
 
     <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,500" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" media="all" href="../stylesheets/main.css" type="text/css" />
-    <link rel="stylesheet" media="all" href="../stylesheets/rocco.css" />
-    <link rel="stylesheet" media="all" href="../stylesheets/github-markdown.css" />
+    <link rel="stylesheet" media="all" href="../../stylesheets/main.css" type="text/css" />
+    <link rel="stylesheet" media="all" href="../../stylesheets/rocco.css" />
+    <link rel="stylesheet" media="all" href="../../stylesheets/github-markdown.css" />
 
-    <script src="../assets/highlight.pack.js"></script>
+    <script src="../../assets/highlight.pack.js"></script>
     <script type="text/javascript">
       hljs.initHighlightingOnLoad();
     </script>
@@ -31,143 +31,27 @@
   <div class="colmask leftmenu tk-proxima-nova">
     <div class="colleft">
       <div class="col1">
-        <h1>Introduction</h1>
+        <h1>Package documentation</h1>
 
-        <p>Let's get you up and running with Syberia!</p>
+        <p>Each of the five Syberia ecosystem packages have [pkgdown](https://hadley.github.io/pkgdown/) documentation:</p>
 
-        <p>If you already know what Syberia is and what you can do it with it, feel free to
-        skip to the next <a href="#example">subsection</a>. Otherwise, hopefully this
-        brief section will answer some questions.</p>
-
-        <p>Will Syberia help me if I am trying to <b>productionize data science models</b>?
-        Yes, but primarily if those models are written in R.
-        Syberia is a framework designed specifically to productionize the R
-        programming language with rapid iteration cycles, although hybrid models
-        consisting of Python, Scala, and other tools will also be possible to deploy.</p>
-
-        <p>Will Syberia help me if I am trying to <b>quantitatively understand a business question</b>?
-        While not its primary design, the packages that compose Syberia can be
-        used to augment interactive data analysis and introduce the benefits
-        of solid developer hygiene such as testability and modularity.</p>
-
-        <p>Will Syberia help me if I am <b>solving an academic problem</b>? 
-        Syberia was designed in an industry context but is general enough to be
-        useful for other domains, including academia. Although no out-of-the-box 
-        Syberia engine currently exists for reproducible research and publication,
-        this is a possible path to explore for the future.</p>
-
-        <p>What if I need to solve a <b>big data problem</b> or <b>deploy low latency
-          machine learning models</b>? Syberia is designed to act as a command
-        center for all data science problems and eventually interact smoothly
-        with high-performance and large-size data requirements. Currently, you
-        should expect to be able to productionize any R code (10-1000ms latency SLAs on data
-        problems with inputs of millions of rows and thousands of features).
+        <p>
+      <ul>
+        <li><a href="http://syberia.io/docs/packages/syberia">Syberia</a></li>
+        <li><a href="http://syberia.io/docs/packages/mungebits2">Mungebits</a></li>
+        <li><a href="http://syberia.io/docs/packages/tundra">Tundra</a></li>
+        <li><a href="http://syberia.io/docs/packages/director">Director</a></li>
+        <li><a href="http://syberia.io/docs/packages/stagerunner">Stagerunner</a></li>
+      </ul>
         </p>
 
-        <p>What about <b>dashboards</b>? <b>Unstructured or audiovisual data</b>? <b>Deep 
-          learning</b>? The world is at your feet but you will have to do some
-        custom <a href="https://en.wikipedia.org/wiki/Foreign_function_interface" target="_new">FFI</a> work.
-        For the current alpha release, productionization of medium-size structured data
-        problems is supported out-of-the-box.</p>
-
-        <h2><a name="example">An example</a></h2>
-
-        <p>Before we get started, let's take a look at what a classifier might
-           look like using the Syberia modeling engine:</p>
-        <div class="code">
-          <pre>
-            <code class="R"><span class="spacer">
-list( # R's a LISP, so we represent the modeling process with a list. :)
-  import = list(
-    # For this simple example, we'll use Kaggle's example Titanic data set.
-    url = "https://raw.githubusercontent.com/haven-jeon/introduction_to_most_usable_pkgs_in_project/master/bicdata/data/titanic.csv"
-  ), # You can use a variety of data import adapters, like csv or AWS's S3.
-
-  data = list(
-    "Factor to character"  = list(column_transformation(as.character), is.factor)
-    # One line per feature engineering step seems undue, but it's for a
-    # good cause: commenting out to try with and without a step is trivial,
-    # and as the parametrization grows longer it's a clear indication
-    # you need a new mungebit!
-  , "fare_title"           = list(multi_column_transformation(function(title, fare) { ave(fare, title, FUN = mean) }), c("title", "fare"), "title_fare")
-  , "Name length variable" = list(new_variable, function(name) nchar(name), "name_length")
-  , "Set factors"          = list(column_transformation(factor), c("sex", "embarked"))
-  , "Restore levels"       = list(restore_categorical_variables)
-  , "Rename dep_var"       = list(renamer, c("survived" = "dep_var"))
-  ), # Giving a short summary of each step will come in handy later.
-
-  model = list(
-      "gbm" # The name of our classifier. This is defined elsewhere.
-    , .id_var             = "X"
-    , distribution        = "bernoulli" # And some parameters.
-    , number_of_trees     = 3000        # Here we try a binary classification.
-    , shrinkage_factor    = 0.005
-    , depth               = 5
-    , min_observations    = 6
-    , train_fraction      = 1
-    , bag_fraction        = 0.5
-    , cv                  = TRUE
-    , cv_folds            = 5
-    , number_of_cores     = 4
-    , perf_method         = "cv"
-    , prediction_type     = "response"
-  ),
-
-  export = list( # Exporting the model is done in 1 line of code.
-    R    = "titanic_model"  # Export the model object to a global variable.
-# , s3   = "path/titanic"   # It's also possible to export to Amazon's S3. 
-# , file = "~/path/titanic" # Or a file...
-                            # Or any other custom export format you define.
-  )
-)
-            </span></code>
-          </pre>
-        </div>
-
-        <p>This simple example showcases the primary principle behind
-           the Syberia approach to modeling. Rather than using collections of
-           loosely-organized scripts, Syberia lets you prescribe what should
-           happen in the model construction process, from importing raw production
-           data to delivery a ready-to-deploy object.</p>
-
-        <p>Syberia allows you to "roll back" to earlier points in time without repeating
-           previous steps in case something went wrong, such as when you're debugging or testing
-           your feature engineering.</p>
-
-        <p>With Syberia, the approach to modeling is the same as the software
-           engineering approach to development: your work should be testable, modular,
-           and each component you build should have a clear purpose. In the example
-           above, we will see how the high-level file is an end-to-end parametrization
-           of the modeling process that breaks down to constructs like I/O adapters,
-           feature engineering <strong>mungebits</strong>, exportable classifiers,
-           and re-runnable stagerunners that achieve a space/time tradeoff to allow
-           you to quickly roll back to halfway through your workflow and experiment
-           with different parameters.</p>
-
-           <p>The current use case of Syberia is rapidly experimenting with different
-           feature engineering steps and machine
-           learning classifiers and producing deployable model objects so that you do not have to recode
-           your work into Python, Ruby, C++ or Java. Many statisticians and academics have
-           worked hard to produce a flourishing ecosystem of statistical and machine learning
-           methods in R and we think their work belongs in the real world without
-           laborious translation efforts.</p>
-
-        <p>The long-term vision for Syberia is to act
-           as a tool for rapidly constructing DSLs (domain-specific languages) to
-           solve problems in a variety of domains: constructing visualization dashboards,
-           performing business intelligence and summarization work, conducting reproducible
-           research, and acting as a command center for all big data frameworks.</p>
 
       <h1>Recommended Next Steps</h1>
 
-      <p>If you like reading detailed guides end-to-end, feel free to continue with the
-      download section below. If you like a hands on approach and diving in head-first,
-      check out the links below for additional examples and resources.</p>
-
       <ul>
-        <li><a href="download.html">Download and Setup</a></li>
-        <li><a href="usage.html">Basic Usage</a></li>
-        <li><a href="101.html">Syberia Modeling 101</a></li>
+        <li><a href="../index.html">Getting Started</a></li>
+        <li><a href="../download.html">Download and Setup</a></li>
+        <li><a href="../101.html">Syberia Modeling 101</a></li>
       </ul>
 
       <h2><a name="additional_resources">Additional Resources</a></h2>
