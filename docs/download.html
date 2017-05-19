@@ -1,0 +1,266 @@
+<html>
+
+  <head>
+    <script src="https://use.typekit.net/xdj4hmw.js"></script>
+    <script type="text/javascript">try { Typekit.load({ async: true }); } catch(e) { }</script>
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,500" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" media="all" href="../stylesheets/main.css" type="text/css" />
+    <link rel="stylesheet" media="all" href="../stylesheets/rocco.css" />
+    <link rel="stylesheet" media="all" href="../stylesheets/github-markdown.css" />
+
+    <script src="../assets/highlight.pack.js"></script>
+    <script type="text/javascript">
+      hljs.initHighlightingOnLoad();
+    </script>
+  </head>
+
+  <body>
+  <div class="backdrop tk-proxima-nova">
+    <div class="header">
+      <div class="header-left"><a href="/">Syberia</a></div>
+      <div class="header-right">
+        <ul>
+          <li><a href="/docs#example">Get Started</a></li>
+          <li><a href="/docs">Docs</a></li>
+        </ul>
+      </div>
+    </div>
+    <br /> <br /> <br />
+  </div>
+  <div class="colmask leftmenu tk-proxima-nova">
+    <div class="colleft">
+      <div class="col1">
+<h1>Download</h1>
+
+<p>
+First, make sure you have <a target="_new" href="https://cran.rstudio.com/">installed R</a>. If you're on OSX
+and have <a target="_new" href="http://brew.sh/">Homebrew</a>, you can run
+</p>
+
+<div class="code shell">
+  <pre>
+# Run this from your command line terminal.
+brew tap homebrew/science && brew install Caskroom/cask/xquartz && brew install r
+  </pre>
+</div>
+
+<br />
+<p>
+Downloading Syberia into a sandbox that does not interfere with your usual
+R package library can be done by running the minimal example project:
+</p>
+<br />
+
+<div class="code shell">
+  <pre>
+# Run this from your command line terminal.
+git clone git@github.com:syberia/example.sy.git && cd example.sy && R
+  </pre>
+</div>
+
+<br />
+<p>If you are having trouble, scroll down to the <a href="#trouble">troubleshooting</a>
+section.</p> After the packages have downloaded and your R session opens 
+type
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+run("example"); model$predict(iris[1:5, ])
+    </code>
+  </pre>
+</div>
+
+<p>If everything worked correctly, you should see some model predictions.  </p>
+
+<p>
+<img src="../../images/example_run.png" />
+</p>
+
+<p>Let's walk through what happened during this process.</p>
+
+<p>
+  <ol>
+    <li>The command <pre class="inline">git clone git@github.com:syberia/example.sy.git</pre> 
+        pulled the <a target="_new" href="https://github.com/syberia/example.sy">example project</a> GitHub
+        repository down and then we moved to the directory using <pre class="inline">cd example.sy</pre>. 
+    <li>We started R, upon which it immediately began processing the project's
+        <a target="_new" href="https://github.com/syberia/example.sy/blob/master/.Rprofile">Rprofile</a>,
+        the file all R sessions execute during startup.
+    <li>The Rprofile in the example project installed the devtools, purrr, and R6 packages
+        from CRAN as well as <a target="_new" href="https://github.com/robertzk/testthatsomemore">testthatsomemore</a>
+        and <a target="_new" href="https://github.com/robertzk/lockbox">lockbox</a>. The former is
+        an extension of the testthat R unit testing package, whereas the latter is
+        an equivalent of <a target="_new" href="https://bundler.io/">Bundler</a> for R: it will keep
+        a separate directory for all of the packages we download so they do not clash
+        with your global R package versions.</li>
+    <li>The Rprofile finally called <pre class="inline">lockbox::lockbox("<a target="_new" href="https://github.com/syberia/example.sy/blob/master/lockfile.yml">lockfile.yml</a>")</pre>.
+        This file is parsed by lockbox to understand which packages we need for this
+        project. If you ever want to load more packages, <i>place them in the lockfile</i>
+        instead of adding <pre class="inline">library</pre> or <pre class="inline">install.packages</pre>
+        calls. This ensures pushing and pulling the project to and from version control
+        loads an R session with the same packages across your whole team's computers.</li>
+    <li>Lockbox installed some packages, the most important ones being 
+        <a target="_new" href="https://github.com/syberia/syberia">syberia</a>,
+        <a target="_new" href="https://github.com/syberia/director">director</a>,
+        <a target="_new" href="https://github.com/syberia/mungebits2">mungebits2</a>,
+        <a target="_new" href="https://github.com/syberia/tundra">tundra</a>, and
+        <a target="_new" href="https://github.com/syberia/stagerunner">stagerunner</a>.
+        These form the core of the current Syberia modeling engine. As with
+        the <a target="_new" href="https://en.wikipedia.org/wiki/Unix_philosophy">Unix philosophy</a>,
+        Syberia aims to create <i>small, reusable tools</i> that <i>do one job well</i>.
+    <li>The Syberia project was initialized using <pre class="inline">syberia::syberia_project()</pre>.
+        This <a target="_new" href="https://github.com/syberia/syberia/blob/master/R/engine.R#L123">bootstrapping procedure</a>
+        builds an R object called a <pre class="inline">syberia_engine</pre> that is built
+        off a <pre class="inline">director</pre> and will manage all the files and directories
+        in your project.</li>
+    <li>During project bootstrapping, the project's <a target="_new" href="https://github.com/syberia/example.sy/blob/master/config/engines.R">engines file</a>
+        was read to understand what "kind" of Syberia project you will be working on.
+        In our case, we wish to make some production-ready machine learning models, so
+        Syberia downloaded and loaded the <a target="_new" href="https://github.com/syberia/modeling.sy">modeling engine</a>.
+        Similar to <a target="_new" href="http://guides.rubyonrails.org/engines.html">Rails engines</a>,
+        Syberia itself is a skeleton and offers no functionality: all of the real meat
+        is in the engines you mount and use in your projects, and creating new ones is trivial.</li>
+    <li>The modeling engine's <a target="_new" href="https://github.com/syberia/modeling.sy/blob/master/config/engines.R#L1">engines file</a>
+        specified a dependency on the <a target="_new" href="https://github.com/syberia/base.sy">base engine</a>.
+        For now, most Syberia projects will be built off the base engine, but this may
+        change once Syberia starts replacing outdated R project structures like packages.</li>
+    <li>If all went well, the <pre class="inline">syberia_engine</pre> loaded and mounted
+        both engines in the appropriate hierarchy of dependencies. Syberia takes care of
+        downloading, mounting, and maintaining your engines. The modeling engine's
+        <a target="_new" href="https://github.com/syberia/modeling.sy/blob/master/config/boot.R#L2">boot file</a>
+        was executed to attach a new namespace called <pre class="inline">syberia:modeling</pre>
+        to your R search path. This is used to provide global helper functions like 
+        <pre class="inline">run</pre> so that they do not clash with your global namespace.</li>
+    <li>You have a freshly printed Syberia session up and running! We'll cover what
+        happened when you executed <pre class="inline">run("example")</pre> in a little bit.</li>
+  </ol>
+</p>
+
+<p>If you ran into any problems during the above process, continue reading
+   for the troubleshooting guide (or use ctrl+F to jump straight to your error message).
+   Otherwise, you can <a target="_new" href="https://github.com/syberia/syberia/issues/new">file a new issue</a>
+   on GitHub explaining your problem and the Syberia core team will jump to the rescue.</p>
+
+<p>Note the above process installed Syberia into a custom library managed by lockbox.
+   To install it globally, run:</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+devtools::install_github("syberia/syberia@install")
+    </code>
+  </pre>
+</div>
+
+<h1><a name="recommended">Recommended Next Steps</a></h1>
+
+<ul>
+  <li><a href="usage.html">Basic Usage</a></li>
+  <li><a href="101.html">Syberia Modeling 101</a></li>
+</ul>
+
+<h1><a target="_new" name="trouble">Troubleshooting</a></h1>
+
+<h2>Cannot open file '~/.R/lockbox/.staging/magrittr/R/magrittr.rdb': No such file or directory</h2>
+
+<p>This is an issue with <a href="https://github.com/robertzk/lockbox">lockbox</a> 
+on certain system configurations. Restarting R should fix the issue. Otherwise,
+try executing the following command from the terminal and then restarting R.
+(Make sure you are starting R from the root of the example project so that you
+load the necessary Rprofile.)</p>
+
+<br />
+<div class="code shell">
+  <pre>
+rm -rf ~/.R/lockbox/.staging
+  </pre>
+</div>
+
+<br />
+<br />
+        </div>
+        <div class="col2">
+          <br /> <br /> <br />
+        <ul class="table-of-contents">
+          <li>
+            <a href="/docs">Introduction</a></li>
+            <ul>
+              <li><a href="/docs#example">An example</a></li>
+              <li><a href="/docs#additional_resources">Additional resources</a></li>
+            </ul>
+          <li><a href="/docs/download.html">Download and Setup</a> <a href="https://github.com/syberia/syberia" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+
+            <ul>
+              <li><a href="/docs/download.html#trouble">Troubleshooting</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/usage.html">Basic Usage</a></li>
+          <li><a href="/docs/101.html">Modeling 101</a>
+            <ul>
+              <li><a href="/docs/101.html#cycle">The Basic Modeling Cycle</a></li>
+              <li><a href="/docs/101.html#stages">The Four Stages</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/mungebits.html">Mungebits</a> <a href="https://github.com/syberia/mungebits2" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+            <ul>
+              <li><a href="/docs/mungebits.html#basic">The Basic Mungebit</a></li>
+              <li><a href="/docs/mungebits.html#testing">Testing Mungebits</a></li>
+              <li><a href="/docs/mungebits.html#advanced">Advanced Mungebits</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/stagerunner.html">Stagerunner</a> <a href="https://github.com/syberia/stagerunner" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+
+            <ul>
+              <li><a href="/docs/stagerunner.html#cycle">The Execution Cycle</a></li>
+              <li><a href="/docs/stagerunner.html#simple">A Simple Stagerunner</a></li>
+              <li><a href="/docs/stagerunner.html#complicated">More Complicated Runners</a></li>
+              <li><a href="/docs/stagerunner.html#engine">The Modeling Engine</a></li>
+              <li><a href="/docs/stagerunner.html#rerun">Re-running Stages</a></li>
+              <li><a href="/docs/stagerunner.html#modeling">The Modeling Cycle</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/tundra.html">Model Objects</a> <a href="https://github.com/syberia/tundra" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+
+            <ul>
+              <li><a href="/docs/tundra.html#container">The Tundra Container</a></li>
+              <li><a href="/docs/tundra.html#serialization">Serialization of Model Objects</a></li>
+              <li><a href="/docs/tundra.html#construction">Constructing Model Objects</li>
+              <li><a href="/docs/tundra.html#engine">Help From Modeling Engine</a></li>
+              <li><a href="/docs/tundra.html#deflation">Appendix: Model Deflation</a></li>
+              <li><a href="/docs/tundra.html#serializing">Appendix: Custom Serializers</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/director.html">Managing Large Projects</a> <a href="https://github.com/syberia/director" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+
+            <ul>
+              <li><a href="/docs/director.html#conventions">Modeling Engine Conventions</a></li>
+              <li><a href="/docs/director.html#base">The Base Engine</a></li>
+              <li><a href="/docs/director.html#basic">Basic Director Object</a></li>
+              <li><a href="/docs/director.html#preprocessor">Preprocessors and Parsers</a></li>
+              <li><a href="/docs/director.html#additional">Additional Functionality</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/testing.html">Testing</a>
+            <ul>
+              <li><a href="/docs/testing.html#defining">Defining Tests</a></li>
+              <li><a href="/docs/testing.html#models">Testing Models</a></li>
+              <li><a href="/docs/testing.html#configuration">Appendix: Test Configuration</a></li>
+              <li><a href="/docs/testing.html#ci">Appendix: Continuous Integration</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/summary.html">Summary and Review</a>
+            <ul>
+              <li><a href="/docs/summary.html#modeling">The Modeling Engine</a></li>
+              <li><a href="/docs/summary.html#base">The Base Engine</a></li>
+              <li><a href="/docs/summary.html#grammar">The Modeling Grammar</a></li>
+              <li><a href="/docs/summary.html#mungebits">Mungebits</a></li>
+            </ul>
+          </li>
+        </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

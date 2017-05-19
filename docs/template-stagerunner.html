@@ -1,0 +1,526 @@
+<h1>Stagerunner</h1>
+
+<p>Experimenting with a data science task is usually done through
+the R console or an IDE by executing portions of a file
+or collection of files. Sometimes this is slightly generalized
+into notebooks, interactive sessions that record the
+history of the code you executed and its outputs, 
+including plots, data, and summaries.</p>
+
+<p>This kind of workflow works well in the old way, when
+you don't intend on returning to your analysis for any
+future use and are happy with a static image result.</p>
+
+<p>Developers working on pure software engineering projects
+usually operate in a different way: they manipulate a single
+codebase and provide iterability and experimentability through
+some other approach that ultimately ends up reflecting what's
+in their codebase.</p>
+
+<p>For example, a front-end web developer might change a
+JavaScript file in the deep innards of a web app, hit refresh
+on their browser, and test out the new functionality by clicking
+their mouse.</p>
+
+<p>To achieve a better data science workflow we will mirror
+the effectiveness of the typical developer approach. 
+We will rely on a <i>shared codebase</i> composed of
+modular and testable resources that allows us to go back
+in time using version control and have new components
+vetted using code review.</p>
+
+<p>Let's try putting the pieces of the codebase together into
+a living breathing object, the same way a web browser brings a
+web application alive. We'll start with a stagerunner but in
+the future may end up with much more.</p>
+
+<h2><a name="cycle">The Execution Cycle</a></h2>
+
+<div class="img-right">
+  <img src="../../images/model_process.png" title="Model Process" />
+</div>
+
+<p>As mentioned earlier, a typical data science cycle begins with:
+importing data, munging (cleaning) it, running a statistical classifier,
+and exporting the model for validation and deployment.</p>
+
+<p>A <b>stagerunner</b> is a single R object (specifically, an R6 object,
+for those familiar with the R6 package which augments R's object-oriented
+programming capabilities) that represents the full execution cycle
+of the data science process. In workflows with large data sets, this
+process is typically distributed across many machines in frameworks
+like Spark and Hadoop. Since there is no distributed implementation
+of the R interpreter (yet - shh ;) ) we focus for now on small and
+medium size data problems. Typically, productionizing several 80%
+solutions offers more business value than productionizing one 100% 
+solution and anyway downsampling is often 
+<a href="http://www.umiacs.umd.edu/~jimmylin/publications/Lin_Kolcz_SIGMOD2012.pdf">good enough</a>.</p>
+
+<p>A stagerunner is simply a tree structure whose terminal nodes
+are functions that operate on an <b>R environment object</b>. If you
+are unfamiliar with R environments but understand pointers from
+languages like C++, simply think of it as a pointer to a list. These
+functions are executed linearly on the R environment starting with
+the empty environment and culminating in side effects that export
+a model, such as storing it to a backend like a cloud storage service or
+a file. For the mathematically inclined, think of a stagerunner as
+an element from finite sequences on the monoid of endomorphisms of R environments
+with the additional meta-data of a hierarchical structure (a very
+fancy way to say a list of functions that take and return
+exactly one environment)</p>
+
+<p>Some task scheduling frameworks like Luigi and Airflow take arbitrary
+directed graphs of tasks and this is certainly the correct generalization
+but can increase the difficulty of debugging failures in complex topologies
+of tasks. Staying within a console tends to be much cozier.
+Eventually Syberia may release this kind of hybrid in-console task 
+scheduling and debugging but for now let's master stagerunners. (If you 
+think hard enough about it, any directed graph can be decomposed into
+purely serial components.)</p>
+
+<h2><a name="simple">A simple stagerunner</a></h2>
+
+<p>Before we jump into the convenient conventions set up by the modeling
+engine that ships with Syberia by default, let's review the basics
+of stagerunners.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+r <- stagerunner$new(list2env(list(data = iris)), list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+))
+r$run()
+    </span></code>
+  </pre>
+</div>
+
+<p>Ok so you got me, I lied a little. Stagerunner functions do not need to return the
+environment they modify since this is one of the few R objects that is
+passed by reference and not by value, and hence any modification in
+another scope (like a function call) modifies the original environment object.</p>
+
+<p>Observe that running the above code yields the desired changes:
+<code class="inline">str(r$context$data)</code> shows we have a modified
+version of <code class="inline">iris</code> with the first column doubled
+and the only categorical column removed.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+env <- list2env(list(data = iris))
+r <- stagerunner$new(env, list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+))
+r$run(1); r$run(1); r$run(1)
+    </span></code>
+  </pre>
+</div>
+
+<p>Inspecting <code class="inline">head(env$data[[1]])</code> shows that the first column of
+<code class="inline">iris</code> is octupled as expected. Now try re-executing all but
+the last line and type <code class="inline">r$run(2)</code>. The last column
+was dropped, as expected.</p>
+
+<p>This is an example of a <b>stateless stagerunner</b>: it has no memory about which
+stages ("Double first columns" versus "Drop categorical columns") were executed.
+Typically this matters as many feature engineering operations are not 
+commutative: dropping correlated features and then imputing may yield
+different results than doing it the other way around.</p>
+
+<h2><a name="complicated">More complicated runners</a></h2>
+
+<div class="img-right">
+  <img src="../../images/achievement-unlocked-template.jpg" title="Achievement unlocked" height="60" />
+</div>
+
+<p>To enforce the order of operation and gain an additional feature we
+enable <b>stateful stagerunners</b>. This unlocks the ability to
+<b>replay any part of the data science process</b> like checkpoints in a 
+video game.
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+r <- stagerunner$new(list2env(list(data = iris)), list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+), remember = TRUE)
+r$run(2)
+    </code>
+  </pre>
+</div>
+
+<p>Note the <code class="inline">remember = TRUE</code> flag at the end. The above
+code will fail with "Cannot run this stage yet because some previous stages have not been executed."
+This is because we are trying to run step two without first running step one. 
+Running <code class="inline">r$run(1)</code> first will fix the problem.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+env <- list2env(list(data = iris))
+r <- stagerunner$new(env, list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+), remember = TRUE)
+r$run(1); r$run(1); r$run(1)
+    </code>
+  </pre>
+</div>
+
+<p>Inspecting <code class="inline">head(env$data)</code> shows that the first column
+of <code class="inline">iris</code> was doubled, not octupled! This is because 
+with remembrance of state turned on our stagerunner object begins with
+a cached copy of the original environment rather than operating on the 
+latest environment. This is powerful: with stateful stagerunners, we can simulate
+going back in time to any step in the process!</p>
+
+<p>The code behind stagerunner makes some <a href="https://en.wikipedia.org/wiki/Space%E2%80%93time_tradeoff">space-time tradeoffs</a>. With stateful runners, <b>a full copy is made of 
+the environment on each step</b>. This is prohibitively memory expensive
+with large datasets. With small datasets, it is manageable and gives us 
+fantastic interactive data analysis and debugging capabilities.</p>
+
+<p>The typical workflow within the Syberia modeling engine is to 
+use an R option or flag to import a small subset (a couple thousand rows)
+of the desired data set and develop a full-fledged prototype of 
+a feature engineering pipeline and classifier. Any immediate errors
+or unexpected bugs in feature engineering can be rapidly debugged
+by effectively using stagerunners.</p> 
+
+<p>When the data scientist is satisfied with the end-to-end process,
+she simply flips the stagerunner to run in a stateless context on the
+full data set and gets to have her cake and eat it too; no more painful
+debugging of background batch jobs or digging through logs.</p>
+
+<p>A final goodie: by using <a href="https://github.com/robertzk/objectdiff">objectdiff</a>,
+we can reduce the space-time tradeoff even further by <b>only copying the
+elements of the environment that changed during each step</b>. If only
+one column was doubled in a thousand-column dataframe, the stagerunner
+and objectdiff combo heuristically analyzes the output of the functions
+that are executed and rapidly detects only one column was changed, minimizing
+how much is stored in the "git-like patches" recording the differences
+in each stage. This retains the replay capability of stagerunners while
+minimizing memory overhead.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+env <- objectdiff::tracked_environment(list2env(list(data = iris)))
+r <- stagerunner$new(env, list(
+  "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+  "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+), remember = TRUE)
+r$run()
+    </code>
+  </pre>
+</div>
+
+<p>Note that <code class="inline">class(env) == c("tracked_environment", "environment")</code>.
+Inspecting <code class="inline">objectdiff::commits(env)</code> shows that two commits
+have been made and running <code class="inline">objectdiff::rollback(env, 1)</code> shows
+that <code class="inline">ncol(env$data) == 4</code>.
+
+<p>It's possible to nest stagerunners:</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+r <- stagerunner$new(new.env(), list(
+  "Import data" = function(env) { env$data <- get(get("DATASET", envir = globalenv())) },
+  "Munge data"  = list(                          
+    "Double first columns"     = function(env) { env$data[[1]] <- 2 * env$data[[1]] },
+    "Drop categorical columns" = function(env) { env$data <- Filter(Negate(is.factor), env$data) }
+  ),
+  "Make a model" = function(env) { env$model <- stats::lm(Sepal.Length ~ ., data = env$data) }  
+))
+DATASET <- "iris"
+r$run() # Note that class(r$context$model) is an lm object.
+    </span></code>
+  </pre>
+</div>
+
+<h2><a name="engine">The modeling engine</a></h2>
+
+<p>The default Syberia engine provides a lot of syntactic sugar to make the above
+process less painful. In particular, we make the notion of <b>stages</b> primitive
+and parametrizable: a stage is simply one node of the full execution tree of a
+stagerunner. The top-level stages that come out-of-the-box are import, data, model,
+and export stage but it is trivial to create more.</p>
+
+<p>The power of this approach lies in finding <b>good parametrizations of the
+data science process</b>. Syberia is a meta-framework that allows you to build
+DSLs customized to solving your specific data problem. To use it correctly
+you may have to create new abstractions (like finding the correct parametrization
+for your stages) in order to reap its full power.</p>
+
+<p>Web frameworks like Rails
+discovered that the <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller">model-view-controller</a>
+pattern works well for many web applications, but as data science is a 
+field still in relative infancy, it is your and the Syberia commmunity's duty
+to explore new paradigms for rapidly iterating on data science solutions.</p>
+
+<p>Enough hype. Let's see an example of an actual data science workflow
+with this approach.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# Open up the example.sy project from earlier and place this file in
+# models/dev/example2.R
+list(import = list(R = "iris"))
+    </code>
+  </pre>
+</div>
+
+<p>Under the hood, typing <code class="inline">run('example2')</code> creates a stagerunner
+that is roughly equivalent to the following code:</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+import_R <- function(params) {
+  get(params, envir = globalenv())
+}
+
+import <- function(params) {
+  adapter <- names(params)[1]
+  params  <- params[[1]]                    
+  adapter <- get(paste0("import_", adapter))
+  adapter(params)                          
+}
+
+r <- stagerunner$new(new.env(), list(
+  "Import data" = function(env) { env$data <- import(list(R = "iris")) }
+))
+r$run()                          
+    </span></code>
+  </pre>
+</div>
+
+<p>That seems like a very complicated way of saying <code class="inline">env$data <- iris</code>!
+It is. However, we have gained something in the process. Note that our model file
+is simply one line of code and clearly reads "import data from an R global variable
+called 'iris'." If we replace it with the below code we would read from an Amazon S3
+cloud storage key without any additional work.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(import = list(s3 = "some/s3/key"))
+    </code>
+  </pre>
+</div>
+
+<p>It is possible to create custom import adapters that read from your
+production database, a data warehouse, a stream, etc.</p> 
+
+<p>The modeling engine includes a few <a href="https://github.com/syberia/modeling.sy/tree/master/lib/adapters">very minimal adapters</a> but we will later see how to create your own.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(
+  import = list(R = "iris"),
+  data   = list(
+    "Create a dependent variable" = list(renamer, c("Sepal.Length" = "dep_var")),
+    "Drop categorical features"   = list(drop_variables, is.factor)
+  )
+)
+    </code>
+  </pre>
+</div>
+
+<p>After <code class="inline">run("example2")</code> take a look at
+<code class="inline">head(A)</code> and you will see that we have a
+<code class="inline">dep_var</code> column and Species has
+been dropped. The above shows a <b>parametrization of feature engineering</b>:
+instead of writing out the full code for renaming the variable and 
+describing in R code how to drop the factor columns, we have
+used a shorthand for describing mungebits to achieve our
+feature engineering pipeline.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(
+  import = list(R = "iris"),
+  data   = list(
+    "Create a dependent variable" = list(renamer, c("Sepal.Length" = "dep_var")),
+    "Drop categorical features"   = list(drop_variables, is.factor)
+  )
+)
+    </code>
+  </pre>
+</div>
+
+<p>It is trivial to add new import and export adapters, parametrize mungebits
+that do complex feature engineering tasks, and parametrize statistical
+classifiers using any R package from CRAN or GitHub.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list(
+  import = list(R = "iris"),
+  data   = list(
+    "Create a dependent variable" = list(renamer, c("Sepal.Length" = "dep_var")),
+    "Create a primary key variable" = list(multi_column_transformation(seq_along), "dep_var", "id"),
+    "Drop categorical features"   = list(drop_variables, is.factor)
+  ),
+  model  = list("lm", .id_var = "id"),
+  export = list(R = "model") 
+) # Try typing class(model) after run("example2")
+    </code>
+  </pre>
+</div>
+
+<p>The default implementation of model stage requires a primary key in the
+data set so we artificially create one. This is so we can easily remember
+train/test splits when making production models on real data sets later.
+The default model stage encourages storing train IDs on the model
+object by deisgn. You almost always want to remember the train IDs so you
+can perform validation correctly in the future and correctly compare refits against
+past models without predicting on training rows.</p>
+
+<p>With the Syberia modeling engine you enter the realm of developers
+and are no longer playing in an interactive notebook but recording the
+fruits of your labor into a breathing codebase with the aid of a
+very interactive execution environment. In its ideal incarnation,
+Syberia deprecates the need for notebooks and other data science tools
+and replaces it with a simple process understood by all software
+engineers: write clean, modular, and testable code so that anything
+you want to create is at your feet. If you are smart enough to
+master the statistics behind data science then you can leave
+the IDE behind and learn the development tools that make software
+engineers so capable and productive. You'll also increase your salary.</p>
+
+<h2><a name="rerun">Re-running stages</a></h2>
+
+<p>The real power from the stagerunner approach lies in replay capability.
+The standard development cycle for a new model should proceed as follows.</p>
+
+<p><ul><li>Determine what data you want to import. Ensure your adapter has
+an easy toggle for importing a tiny subset of the data (e.g., you should be
+able to restrict to a few thousand rows by setting a certain <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/options.html">global option</a>).</li>
+  <li>Build your feature engineering pipeline, replaying each step and
+    checking the <code class="inline">B</code> and <code class="inline">A</code>
+    global variable helpers to examine what the data looks like
+    <b>before and after running a munging step</b>.</li>
+  <li>Train a small model and check that the parameters are sane.</li>
+  <li>Run a full model by flipping the aforementioned toggle and
+    make sure to turn off the remember flag on the stagerunner.</li>
+</ul></p>
+
+<p>This is a local development workflow. The last step should be executed
+on a remote build scheduling system that deploys instances capable of
+handling your large data sets (like a large Amazon AWS instance or 
+a multi-instance operating system like Plan 9--just kidding, but that
+would be cool). Alternatively, you can SSH into a large instance
+and run models there directly but it will be cumbersome to try
+experiments that simultaneously train thousands of models.</p>
+
+<p>For example, try the following commands.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+run(, 1)
+run(, "2/1")
+run(, "data/2")
+run(, "da/1", "da/2")
+run(, "data")
+run(, "model")
+run(, 3)
+    </code>
+  </pre>
+</div>
+
+<p>Carefully inspect the structure of <code class="inline">B</code> and
+<code class="inline">A</code> before and after each command.</p>
+
+<p>Note that these helpers are really <a href="https://github.com/syberia/modeling.sy/blob/master/config/global/modeling/modeling.R#L92-L95">active bindings</a> and
+boil down to <code class="inline">r$context$data</code> on the
+underlying stagerunner that is being constructed on-the-fly
+before and after calling <code class="inline">r$run("2/1")</code>, etc.</p>
+
+<p>The extra comma at the beginning indicates we wish to continue to
+run the "example2" model. The difference is that we are calling the
+<a href="https://github.com/syberia/modeling.sy/blob/master/config/global/modeling/run_model.R">run global helper</a> which takes an additional first parameter rather than the
+run method on the underlying stagerunner. Typing <code class="inline">run("example1", to = 2)</code>
+indicates we wish to switch focus to the "example1" model and execute its
+process up to the data munging stage.</p>
+
+<p>Note the fuzzy matching in the above examples. Under the hood, 
+"da/1" means "look for a stage that matches the regular expression
+<b>.*d.*a.*</b> in its top-level and grab the first node." What
+happens when you try <code class="inline">run(, "d/1")</code>?</p>
+
+<p>An important note is that fuzzy matching can be ambiguous and
+sometimes execute the wrong model. Fuzzy match results are ordered
+in descending order by file modification time, so if you ever find
+<code class="inline">run</code> is being annoying and not executing
+the correct model (e.g., if you have "example" and "example_foo"
+and <code class="inline">run("example")</code> is matching to
+the incorrect one) simply make a tiny change like adding a space
+and save the model file: <code class="inline">run</code> will
+pick up the change and execute the model whose file has been
+most recently modified.</p>
+
+<code class="inline"></code>
+
+<h2><a name="modeling">The modeling cycle</a></h2>
+
+<p>You now know enough about stagerunners to start being productive. The
+next step is to learn more about how the various stages are parametrized 
+and learn how to extend them and write your own. For example, if you
+need to generate a report after the model is trained but before exporting
+the object, you could write a "report" stage that creates an
+appropriate R markdown file. Or maybe you want to deploy a web service
+that has a dashboard after you have exported the model: simply
+write a "dashboard" stage.</p>
+
+<p>To summarize, we have learned that:</p>
+
+<p><ul><li>Model files are simply syntactic shortcuts for building stagerunner objects.
+  Typically, you never have to explicitly deal with these objects.</li>
+  <li>Stagerunner objects are syntactic shortcuts for executing
+    parts of a list of R functions that take and modify an environment called the
+    <b>stagerunner context</b>. In other words, stagerunners express in code
+  the idea of highlighting a section of an R file and hitting the execute button.</li>
+  <li>The power of using stagerunners derives in our departure from
+    messy, linear scripts. By separating components into clearer functions,
+    we can let duo's like stagerunner and objectdiff memorize the changes
+    that we make to our data so we can replay our steps and debug what went wrong.</li>
+  <li>Stages are functions that take parameters and produce a list of stagerunner-compatible
+  functions (re-read that a few times!). By defining a good set of parameters
+  for the data science process and splitting it up into stages like import,
+  data, model, export, and more, we gain the power to succintly describe
+  how to take a messy, production data set and convert it to a ready-to-deploy
+  model. This succint description is created by the data scientist during interactive
+  data analysis but is complete and admissible into a version-controlled
+  codebase so we never have artifacts or scripts lying around.</li>
+  <li>The modeling engine provides lots of <a href="https://en.wikipedia.org/wiki/Convention_over_configuration">shortcuts and shorthand</a>
+    for rapidly developing models and feature engineering pipelines while
+    retaining the flexibility of debugging and testing.</li>
+  <li>The best part is: the end result is a clean file in a beautiful
+    codebase without the typical mess left by an interactive notebook
+    or R script! The whole thing forces you to be a good developer
+    by design by reducing the friction in developing data science
+    products like a software engineer.</li>
+ </ul></p>
+
+<p>One last time, enough hype! Let's dive in to a few more features of
+the modeling engine.</p>
+
+<h2>Next Steps</h2>
+
+<ul>
+  <li><a href="tundra.html">Model objects</a></li>
+  <li><a href="director.html">Controllers</a></li>
+  <li><a href="testing.html">Testing</a></li>
+  <li><a href="summary.html">Summary and review</a></li>
+</ul>
+

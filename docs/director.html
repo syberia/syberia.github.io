@@ -1,0 +1,568 @@
+<html>
+
+  <head>
+    <script src="https://use.typekit.net/xdj4hmw.js"></script>
+    <script type="text/javascript">try { Typekit.load({ async: true }); } catch(e) { }</script>
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,500" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" media="all" href="../stylesheets/main.css" type="text/css" />
+    <link rel="stylesheet" media="all" href="../stylesheets/rocco.css" />
+    <link rel="stylesheet" media="all" href="../stylesheets/github-markdown.css" />
+
+    <script src="../assets/highlight.pack.js"></script>
+    <script type="text/javascript">
+      hljs.initHighlightingOnLoad();
+    </script>
+  </head>
+
+  <body>
+  <div class="backdrop tk-proxima-nova">
+    <div class="header">
+      <div class="header-left"><a href="/">Syberia</a></div>
+      <div class="header-right">
+        <ul>
+          <li><a href="/docs#example">Get Started</a></li>
+          <li><a href="/docs">Docs</a></li>
+        </ul>
+      </div>
+    </div>
+    <br /> <br /> <br />
+  </div>
+  <div class="colmask leftmenu tk-proxima-nova">
+    <div class="colleft">
+      <div class="col1">
+<h1>Managing large projects</h1>
+
+<p>Syberia comes bundled with <a href="https://github.com/syberia/director">director</a>, an R6
+package aimed at simplifying management of large R projects.</p>
+
+<p>By default, most R projects are collections of loosely organized scripts. A
+newcomer to the project would have to rely on very thorough documentation to understand
+how the executable tasks fit together and how to replicate and expand on any analysis.
+Using notebooks like Jupyter just makes the problem worse: hard to inspect in code
+reviews and encouraging messy watch-and-see-what-you-get scripting, notebooks
+suck the developer right out of our analyst bones.</p>
+
+<p>If you just want to roll up your sleeves and get to work, feel free to skip this
+section and move on to <a href="">testing</a> (a software developer wrote this guide;
+we won't let you skip testing!). A high-level understanding of how Syberia projects
+manage stuff under the hood is helpful for expanding your horizon to more than
+just the functionality packaged with the modeling engine.</p>
+
+<p>In Syberia, we rely on <a href="">convention over configuration</a>, a common design
+pattern in software frameworks that removes some leeway in the organizational structure
+in exchange for something incredibly powerful: all R developers working in Syberia projects
+will share common knowledge about how work is organized.</p>
+
+<h2><a name="conventions">The modeling engine conventions</a></h2>
+
+<p>In particular, the <a href="">modeling engine</a> that currently comes bundled as
+the default engine for structured supervised learning projects such as regression and
+classification sets up a few conventions which all modeling engine projects conform to:</p>
+
+<p><ul>
+  <li><p>The <b>models</b> directory holds all models for a given project. Each file is
+  an R script that ends with a list object which hyper-parameterizes the
+  data science process into a linear sequence of stages. All the conventions below are
+  the recipe ingredients that turn model files from static lists to living, breathing
+  objects defining a dynamic modeling pipeline.</p>
+  <p>In the current modeling engine incarnation, these are <a href="">stagerunners</a>,
+  R6 objects that tie together all aspects of the modeling process&mdash;but in the future
+  we may release support for distributed backends and engines such as Spark or Tensorflow.
+  Let's humbly learn how to walk before we run.</p></li>
+  <li><p>The <b>lib/adapters</b> directory defines IO (input and output) mechanisms for data
+  and serialized model objects. For example, data might be read in CSV format, from a
+  database or data warehouse, or simply reside in-memory. Data and model objects may
+  be written to a file, to a cloud storage service, or pushed via HTTP to an API.</p></li>
+  <li><p>The <b>lib/mungebits</b> directory holds mungebits, already familiar from an
+  earlier lesson, which define feature engineering templates that transform dataframes
+  to dataframes. In the future, we may extend the notion of mungebits to distributed
+  settings such as Spark, Tensorflow or Hadoop and even explore graphical or other 
+  forms of data manipulation and computation&mdash;but development will stay nice and cozy within R.</p></li>
+  <li><p>The <b>lib/stages</b> directory is a collection of modeling stages, by default
+  <i>import</i>, <i>data</i>, <i>model</i>, and <i>export</i>. The complex logic that
+  defines how to process the parameters in the modeling file lives in these stages: 
+  each R file in this directory is a functional, a function that returns another function,
+  namely, a function that takes in the parameters from the model file under the given stage key and spits out a
+  transformation of an environment that performs the appropriate operations of the stage.</p>
+  
+  <p>For example, import stage may read from a CSV file whereas model stage may construct
+  a <a href="">tundra container</a> and then call its predict method.</p></li>
+  <li><p>The <b>lib/classifiers</b> directory is responsible for housing all the training and
+  prediction functions for various statistical classifiers: linear regression, random forest,
+  gradient boosting machines, support vector machines, et cetera. These are responsible for
+  the construction of a <i> model object</i>, a serializable R object that represents all
+  meta-data required to replicate the scoring of outputs on new validation sets or real-time
+  data.</p></li>
+</ul></p>
+
+<p>Note that while in the current convention modeling remains in-memory and finitely bound,
+this is not a given. If the syntax is sharp and compact, we may replace backends from
+the current in-memory R approach to acting as a distributed command center for millions
+of machines, but experimentation on local slices of the data can remain in one of the most
+powerful interactive consoles we know: the R interpreter.</p>
+
+<h2><a name="base">The base engine</a></h2>
+
+<p>The above conventions are not exhaustive. Several are inherited from the parent engine
+of the modeling engine: the base engine. The conventions established in the list below are defined by the
+<a href="">base engine</a>, which is more general than the modeling engine and serves as the
+clay for almost all future Syberia engines. In case you are wondering, do not worry, at the
+present moment the topology is simple and linear: your project makes use of the modeling engine, which makes
+use of the base engine, which relies on the Syberia package.</p>
+<p>Future larger projects may
+have complex intertwined engines for a variety of machine learning and business tasks, but
+for the moment, once again, let us walk before we run.</p>
+<p>For example, unsupervised learning, natural language processing, scientific research,
+dashboarding and business intelligence, trading and finance, may all require different
+conventions which differ somewhat or drastically from the structured supervised learning problem.
+Building on top of the base engine allows for some very powerful meta-conventions:</p>
+
+<p><ul>
+  <li>The <b>config/routes</b> resource (typically just a routes.R file) establishes the
+  link between the <b>lib/controllers</b> directory and the rest of the project: it tethers
+  together which directories are processed by which controllers.</li>
+  <li><p>The <b>lib/controllers</b> directory forms the heart of Syberia's expansive
+  configurability. In an effort to strike the balance between establishing conventions
+  over configurations, whilst suitably recognizing that the taxonomy of
+  <a href="">computing tasks</a> may require different conventions to optimally iterate
+  on its given set of problems, the notion of a <i>controller</i> allows us to
+  <i>generalize how R works</i>. In the old way, we would use <code class="inline">base::source</code>
+  to execute an R file and store the value of its last expression in a local variable.</p>
+  <p>Controllers allow us to define <i>preprocessors</i> and <i>parsers</i>. A preprocessor
+  is a function that specifies everything <i>before</i> we execute an R file and a parser
+  is a function that specifies everything <i>after</i> we execute an R file&mdash;in a 
+  given directory. In effect, controllers allow us to establish heterogeneous DSLs
+  (domain-specific languages) in a hierarchical directory structure in a way that
+  most optimally conforms to how we wish to solve a particular problem, whether it be
+  production-ready machine learning or experimental business intelligence dashboarding.</p>
+  <p>The Syberia team looks forward to the creativity and imagination the R community
+  will display when fully unlocking the power of controllers: let the domain-specific
+  languages flood out the rigidity of CRAN and the constraints of packages, thus
+  establishing R as a true player in the "general purpose programming language" 
+  sector. It is, after all, just a LISP&mdash;a rather powerful one at that.</li>
+</ul></p>
+
+<p>Philosophical asides beside, let's examine how a director object helps us 
+generalize our thinking about R projects with some more concrete examples.</p>
+
+<h2><a name="basic">The most basic director object</a></h2>
+
+Let us start from the beginning and open a vanilla R session from the terminal:
+<code class="inline">R --vanilla</code>.
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+devtools::install_github("syberia/director") # Install director into the global library.
+library(director)
+dir <- tempdir()
+project <- director(dir)
+project # Director object monitoring 'temporary director'.
+    </span></code>
+  </pre>
+</div>
+
+<p>We have in our hands a director object! Note the <code class="inline">class(project)</code>.
+Under the hood, Syberia manages the creation of a director object when your R session
+starts and <code class="inline">syberia::syberia_project()</code> is called: this last 
+expression returns a <code class="inline">syberia_engine</code> R6 object which inherits
+from the <code class="inline">director</code> R6 class and expands on the vanilla functionalities
+of a director object.</p>
+
+<p>Let's see what our object can do: <code class="inline">ls(project)</code>. The noteworthy
+methods are <code class="inline">exists, filename, find, root</code> and
+<code class="inline">resource</code>.</p>
+
+<p>Let's create an R file in our temporary project and see what happens.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# Write "cat('Hello world!')" into hello.R at the root of the project.
+# You can also do this using a text editor.
+# Note: `project$root()` is equivalent to `dir` from earlier, if not a little clearer.
+writeLines("cat('Hello world!')", file.path(project$root(), "hello.R"))
+# Our project now recognizes hello.R as a "hello" resource.
+project$find() # [1] "hello"
+# Executing the resource gives us what we expect.
+project$resource("hello") # Hello world!NULL
+# We have a NULL at the end the return value of the cat function is NULL.
+    </span></code>
+  </pre>
+</div>
+
+<p>By default, the <code class="inline">resource</code> method acts as a slightly more
+powerful <code class="inline">source</code>.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+devtools::install_github("robertzk/Ramd") # Install the Ramd package for the 'define' helper.
+# Create dir/world
+dir.create(file.path(project$root(), "world"))
+# Write to dir/world/world.R
+writeLines("Ramd::define('hello', function(hello) { cat(hello, 'world!') })",
+           file.path(project$root(), "world", "world.R"))
+writeLines("'hello'", file.path(project$root(), "world", "hello.R"))
+project$find() # [1] "world" "hello"
+    </span></code>
+  </pre>
+</div>
+
+<p>Note that <code class="inline">find</code> does not produce results in alphabetical
+order. The resources are ordered by which ones were modified most recently.</p>
+
+<p>In the above example, we illustrated one of the most powerful concepts in
+director: <b>idempotent resources</b>. Many dynamic scripting languages like JavaScript
+or R have found themselves at the forefront of popular usage without 
+the language designer anticipating their growth in complexity. In R projects,
+we typically find it hard to organize our work sometimes because, like JavaScript,
+R was simply not designed with large architectures in mind.</p>
+
+<p>However, there is a neat solution. We take a page out of the books of
+<a href="">require.js</a> and node.js and allow each director object a very
+specific convention: if a file (ignoring extension) has the same name as its
+parent directory, it gets treated as an idempotent resource, meaning that
+the other files in that directory are <b>helper files</b> which become invisible
+to the director object.</p>
+
+<p>These helper files are implicitly understood to be available
+to the main file for its final construction, but otherwise should not be
+treated as Syberia resources, that is, should not be made available as modular
+pieces for re-use within the rest of the project. If you find yourself
+needing to make use of them, it is a good indication that they deserve
+the title of their own distinct resource.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+list.files(project$root(), recursive = TRUE)
+# "hello.R"       "world/hello.R" "world/world.R"
+project$filename("world")
+# [1] "world/world.R"
+    </span></code>
+  </pre>
+</div>
+
+<p>The director object keeps track of the fact that the "world" resource
+is in fact at "world/world.R". This is a virtual construction which maps
+either to "world.R" or "world/world.R" depending on the name of the parent
+directory of "world.R".</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+project$resource("world")
+# hello world!NULL
+    </span></code>
+  </pre>
+</div>
+
+<p>Our resource has been pieced together from the world directory using
+both "world/hello.R" and "world/world.R".</p>
+
+<p>The usage of the Ramd package was for the <code class="inline">Ramd::define</code>
+function, which allows a convenient syntax for sourcing adjacent files. Note
+these files are truly <i>sourced</i> using <code class="inline">base::source</code>
+and are pure helper R scripts&mdash;they do not benefit from the preprocessor
+or parser magic in director that we are about to introduce! (This is a frequent
+source of bizarre bugs and stack traces and merits explicit mention.)</p>
+
+<h2><a name="preprocessor">Preprocessors and parsers</a></h2>
+
+<p>Continuing with the example from the previous section, let's add some flair
+to our project.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+john <- utils::person("John", "Doe")
+john # "John Doe"
+class(john) # "person"
+    </span></code>
+  </pre>
+</div>
+
+<p>We use the simplest illustrative structure we know of: the utils package's
+definition of a <code class="inline">person</code> S3 class. Imagine we
+want to define a convention that all files in the "people" directory
+must return a <code class="inline">c("first name", "last name")</code> 
+character vector and create a person object. It would be annoying and
+repetitive to write <code class="inline">utils::person("first name", "last name")</code>
+in each file, and anyway we may wish to replace the base definition with another
+class down the road. (See <a href="">don't repeat yourself</a>.)</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+dir.create(file.path(project$root(), "people"))
+writeLines('c("Jane", "Smith")', file.path(project$root(), "people/jane.R"))
+jane <- project$resource("people/jane")
+jane # [1] "Jane" "Smith"
+class(jane) # "character"
+    </span></code>
+  </pre>
+</div>
+
+<p>So far, we have not accomplished our objective: <code class="inline">jane</code>
+is still a lowly character vector, not a <code class="inline">person</code>.
+To animate her like Pinnocchio, we shall define a parser on the director object.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+project$register_parser("people", function(output) {
+  do.call(utils::person, as.list(unname(output)))
+})
+    </span></code>
+  </pre>
+</div>
+
+<p>Now let's try again.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+jane <- project$resource("people/jane")
+jane # [1] "Jane Smith"
+class(jane) # "person"
+    </span></code>
+  </pre>
+</div>
+
+<p>What a lovely lady <code class="inline">jane</code> now has become! By
+calling <code class="inline">register_parser</code> on the <code class="inline">project</code>,
+we have implicitly told our director to, going forward, treat all
+files in the "people" directory with the convention: take the output
+of the file and pass it as arguments to <code class="inline">utils::person</code>.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+dir.create(file.path(project$root(), "people", "maryjane"))
+writeLines("mary &lt;- 'Mary'; jane &lt;- 'Jane'; paste(mary, jane, sep = '-')",
+           file.path(project$root(), "people", "maryjane", "mj.R"))
+writeLines("Ramd::define('mj', function(mj) { c(mj, 'Jones') })",
+           file.path(project$root(), "people", "maryjane", "maryjane.R"))
+maryjane &lt;- project$resource("people/maryjane")
+maryjane # [1] "Mary-Jane Jones"
+class(maryjane) # "person"
+    </span></code>
+  </pre>
+</div>
+
+<p>As you can see, <code class="inline">maryjane</code> is more complex than
+<code class="inline">mary</code>, but she is still a great example of a
+<code class="inline">person</code>.</p>
+
+<p>So far, we have encountered an example of a parser. We can also do additional
+work before sourcing the file, such as injecting helper functions (maybe even
+recursively composed of other Syberia resources.)</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+project$register_preprocessor("people", function(source_env, source) {
+  source_env$capitalize <- function(x) {
+    x <- strsplit(x, "")[[1]]
+    paste(c(toupper(x[1]), tolower(x[-1])), collapse = "")
+  }
+  source()
+})
+    </span></code>
+  </pre>
+</div>
+
+<p>We can now use the <code class="inline">capitalize</code> helper in
+files in the "people" directory.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+writeLines("sapply(c('jimmy', 'JOHNSON'), capitalize)",
+           file.path(project$root(), "people", "jimmy.R"))
+jimmy &lt;- project$resource("people/jimmy")
+jimmy # [1] "Jimmy Johnson"
+class(jimmy) # "person"
+    </span></code>
+  </pre>
+</div>
+
+<p>Before Hadley Wickham pops out of thin air to remind you never to use
+<code class="inline">sapply</code>, note that we never defined
+<code class="inline">capitalize</code> anywhere in the file: it got injected
+by the preprocessor.</p>
+
+<p>The full list of magic provided by the preprocessor and parser
+definitions is listed in the appendix. The Syberia base engine (the
+foundation for the modeling engine) provides conventions that bootstrap
+a vanilla <code class="inline">director</code> object into providing
+some very basic conventions: everything in "lib/controllers" allows
+us some shortcuts for calling <code class="inline">project$register_preprocessor</code>
+and <code class="inline">project$register_parser</code> under the hood.</p>
+
+<p>In other words, Syberia uses director recursively to bootstrap the definition
+of "controllers" into existence: even controllers are just another Syberia
+resource and can be rewritten at will; and even <code class="inline">director</code>
+objects can be replaced with more powerful tools for managing R projects.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+cat("I know of these people:", paste(collapse = ", ", project$find("people")), "\n")
+# I know of these people:  people/jimmy, people/maryjane, people/jane
+vapply(project$find("people"), function(p) { as.character(project$resource(p)) }, "")
+#      people/jimmy   people/maryjane       people/jane
+#   "Jimmy Johnson" "Mary-Jane Jones"      "Jane Smith"
+    </span></code>
+  </pre>
+</div>
+
+<h2><a name="additional">Additional director functionality</a></h2>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# By default, `find` matches using fuzzy wildcard and is equivalent to
+# the regex: .*p.*.p.*l.*
+project$find("ppl") # [1] "people/jimmy"    "people/maryjane" "people/jane"
+# This is mostly because the author is lazy and likes convenience. Feel
+# free to suggest a change in a pull request or issue in the director package.
+# You can target just subdirectories:
+project$find("ppl", method = "partial") # character(0)
+project$find("people", method = "partial") # [1] "people/jimmy"    "people/maryjane" "people/jane"
+# You can also target for an exact match, at most one result.
+project$find("people", method = "exact") # character(0)
+project$find("people/jimmy", method = "exact") # [1] "people/jimmy"
+
+# You can use `filename` to discover the filename behind a resource.
+unname(vapply(project$find("people"), project$filename, character(1)))
+# [1] "people/jimmy.R" "people/maryjane/maryjane.R" "people/jane.R"
+
+# You can use `exists` to check for resource existence.
+project$exists("people/jimmy") # [1] TRUE
+project$exists("people/jimmyjohns") # [1] FALSE
+    </span></code>
+  </pre>
+</div>
+
+<p>Some additional more advanced functionality is provided by the
+<code class="inline">syberia_engine</code> object which extends the <code class="inline">director</code>
+object but that is beyond the scope of this introduction. It involves handling
+all communication and coordination between the root project and its
+dependent engines, in addition to locating resources across the topology
+of engines mounted to the root project. If all that sounds complicated,
+that's because it is, so don't worry about it for now.</p>
+
+<h2>How director interacts with your project</h2>
+
+<p>Under the hood, you don't have to worry about most of the explicit
+examples in this chapter. The Syberia modeling engine handles almost
+all uses of director objects under the hood. The only real usage 
+you should remember is to call <code class="inline">project$resource("foo")</code>
+when you want to call resource "foo" (e.g., "models/model1", "lib/mungebits/imputer", et cetera).</p>
+<p>The <code class="inline">project</code> global helper is just a 
+shortcut for <code class="inline">syberia::syberia_project()</code>, which
+builds your project from the current working directory into a <code class="inline">syberia_engine</code>
+R6 object and then memoizes (caches) it in memory.</p>
+
+<h2>Next Steps</h2>
+
+<p>You are so close! You can skip straight to the summary, but any great
+aspiring developer will read the section on testing.</p>
+
+<ul>
+  <li><a href="testing.html">Testing</a></li>
+  <li><a href="summary.html">Summary and review</a></li>
+</ul>
+
+<h2>Appendix: Available arguments for preprocessor and parser definitions</h2>
+
+<p>Preprocessors and parsers offer powerful capability for extending the
+vanilla <code class="inline">base::source</code> function.
+
+        </div>
+        <div class="col2">
+          <br /> <br /> <br />
+        <ul class="table-of-contents">
+          <li>
+            <a href="/docs">Introduction</a></li>
+            <ul>
+              <li><a href="/docs#example">An example</a></li>
+              <li><a href="/docs#additional_resources">Additional resources</a></li>
+            </ul>
+          <li><a href="/docs/download.html">Download and Setup</a> <a href="https://github.com/syberia/syberia" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+
+            <ul>
+              <li><a href="/docs/download.html#trouble">Troubleshooting</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/usage.html">Basic Usage</a></li>
+          <li><a href="/docs/101.html">Modeling 101</a>
+            <ul>
+              <li><a href="/docs/101.html#cycle">The Basic Modeling Cycle</a></li>
+              <li><a href="/docs/101.html#stages">The Four Stages</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/mungebits.html">Mungebits</a> <a href="https://github.com/syberia/mungebits2" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+            <ul>
+              <li><a href="/docs/mungebits.html#basic">The Basic Mungebit</a></li>
+              <li><a href="/docs/mungebits.html#testing">Testing Mungebits</a></li>
+              <li><a href="/docs/mungebits.html#advanced">Advanced Mungebits</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/stagerunner.html">Stagerunner</a> <a href="https://github.com/syberia/stagerunner" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+
+            <ul>
+              <li><a href="/docs/stagerunner.html#cycle">The Execution Cycle</a></li>
+              <li><a href="/docs/stagerunner.html#simple">A Simple Stagerunner</a></li>
+              <li><a href="/docs/stagerunner.html#complicated">More Complicated Runners</a></li>
+              <li><a href="/docs/stagerunner.html#engine">The Modeling Engine</a></li>
+              <li><a href="/docs/stagerunner.html#rerun">Re-running Stages</a></li>
+              <li><a href="/docs/stagerunner.html#modeling">The Modeling Cycle</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/tundra.html">Model Objects</a> <a href="https://github.com/syberia/tundra" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+
+            <ul>
+              <li><a href="/docs/tundra.html#container">The Tundra Container</a></li>
+              <li><a href="/docs/tundra.html#serialization">Serialization of Model Objects</a></li>
+              <li><a href="/docs/tundra.html#construction">Constructing Model Objects</li>
+              <li><a href="/docs/tundra.html#engine">Help From Modeling Engine</a></li>
+              <li><a href="/docs/tundra.html#deflation">Appendix: Model Deflation</a></li>
+              <li><a href="/docs/tundra.html#serializing">Appendix: Custom Serializers</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/director.html">Managing Large Projects</a> <a href="https://github.com/syberia/director" class="img-link" target="_blank"><img src="/images/octocat.png" style="height: 16px; width: 16px;"></a>
+
+            <ul>
+              <li><a href="/docs/director.html#conventions">Modeling Engine Conventions</a></li>
+              <li><a href="/docs/director.html#base">The Base Engine</a></li>
+              <li><a href="/docs/director.html#basic">Basic Director Object</a></li>
+              <li><a href="/docs/director.html#preprocessor">Preprocessors and Parsers</a></li>
+              <li><a href="/docs/director.html#additional">Additional Functionality</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/testing.html">Testing</a>
+            <ul>
+              <li><a href="/docs/testing.html#defining">Defining Tests</a></li>
+              <li><a href="/docs/testing.html#models">Testing Models</a></li>
+              <li><a href="/docs/testing.html#configuration">Appendix: Test Configuration</a></li>
+              <li><a href="/docs/testing.html#ci">Appendix: Continuous Integration</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/summary.html">Summary and Review</a>
+            <ul>
+              <li><a href="/docs/summary.html#modeling">The Modeling Engine</a></li>
+              <li><a href="/docs/summary.html#base">The Base Engine</a></li>
+              <li><a href="/docs/summary.html#grammar">The Modeling Grammar</a></li>
+              <li><a href="/docs/summary.html#mungebits">Mungebits</a></li>
+            </ul>
+          </li>
+        </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

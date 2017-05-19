@@ -1,0 +1,231 @@
+<h1>Model objects</h1>
+
+<p>After your model is trained, you want to be able to make use of it later for
+validation or production scoring. In some situations, like when your end goal
+is to produce a static report, this may not be necessary, but even in these
+cases it may be useful to reproduce the scores later.</p>
+
+<p>A <b>model object</b> is an R object that is able to reproduce the scores
+generating during training on the same messy, production data that was used
+to train the model. Typically, R model objects like <code class="inline">lm</code>
+or <code class="inline">gbm</code> objects are insufficient for reproducing
+scores in a live scoring environment: you will have to "productionize" your
+feature engineering pipeline as well after the data scientists have prototyped it.</p>
+
+<p>In the Syberia modeling engine, feature engineering is a critical production-ready
+aspect of the process that does not require any additional code: the code you ran
+in mungebits and the parameters that were selected during training
+(for example, the columns that were dropped after detecting for correlations, the
+means of features to use during imputation, etc.) are stored on the model object.</p>
+
+<p>This allows us to faithfully replicate the end-to-end data science process
+that produced the model on single rows that come through in a production system.
+Alternatively, we can use the model object to generate validation scores on new
+samples from the original distribution, e.g., when new customers arrive or when
+we get additional data.</p>
+
+<h2><a name="container">The tundra container</a></h2>
+
+<p>The default model object container that ships with the modeling engine is
+a <b>tundra container</b> (tundra because it freezes your model for production use,
+and tundra is in Syberia... get it?).</p>
+
+<p>A tundra container is an R6 object that consists of a <b>munge procedure</b>,
+a <b>train function</b>, a <b>predict function</b> and <b>inputs saved during training</b>.
+The munge procedure is copied directly from the data stage.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+# Place this code in models/dev/example3.R
+list(
+  import = list(R = "iris"),
+  data   = list(
+    "Create a dependent variable" = list(renamer ~ NULL, c("Sepal.Length" = "dep_var")),
+    "Create a primary key variable" = list(multi_column_transformation(seq_along) ~ NULL, "dep_var", "id"),
+    "Drop categorical features"   = list(drop_variables, is.factor)
+  ),
+  model  = list("lm", .id_var = "id"),
+  export = list(R = "model") 
+)
+    </code>
+  </pre>
+</div>
+
+<p>Note that we have added <code class="inline">~ NULL</code>. This is very important to ensure
+the model predicts correctly: we do not want to rename the dependent variable during 
+prediction nor do we want to create an id column. Now let's execute the model.</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+run("example3")
+model$munge_procedure
+model$predict_fn
+    </code>
+  </pre>
+</div>
+
+<p>You should see some colorful output!</p>
+
+<p><img src="../../images/tundra-example2.png" title="Example of tundra container munge procedure" style="border-radius: 30px; border: 30px solid #000; padding: 0;" width="600" /></p>
+
+<p>Let's try to make a prediction: <code class="inline">model$predict(iris[1:5, ])</code>. You can
+also inspect how the model is munging the data using <code class="inline">model$munge(iris)</code>,
+or even execute just a subset of the munge procedure using <code class="inline">model$munge(iris, 1)</code>,
+<code class="inline">model$munge(iris, 1:2)</code>, <code class="inline">model$munge(model$munge(iris, 1), 2)</code>, etc. This can be very helpful for debugging.</p>
+
+<h2><a name="serialization">Serialization of model objects</a></h2>
+
+<p>R is a LISP which means that most R objects, including model objects, are recursively
+composed of lists and atomic vectors. This makes serialization very easy in R! In fact,
+the built-in <code class="inline">saveRDS</code> is capable of serializing most objects.
+(If you have custom C pointers or difficult-to-serialize environment objects you can 
+define a custom serializer &mdash; see the <a href="#serializing">appendix</a>).</p>
+
+<p>To save the model object to a file, simply use <code class="inline">saveRDS</code>:</p>
+
+<div class="code">
+  <pre>
+    <code class="R"><span class="spacer">
+dir.create("~/tmp")
+saveRDS(model, "~/tmp/model.rds")
+readRDS("~/tmp/model.rds")$predict(iris[1:5, ])
+    </code>
+  </pre>
+</div>
+
+<p>You will notice the predictions are the same as before.</p>
+
+<h2><a name="construction">Constructing model objects</a></h2>
+
+<p>Let's create a model object directly.</p>
+
+<div class="code">
+  <pre>
+    <code class="R">
+    <span class="spacer">
+model <- tundra::tundraContainer$new("lm", function(data) {
+  output$model <- stats::lm(Sepal.Length ~ Sepal.Width, data = data)
+}, function(data) {
+  predict(output$model, data = data)
+})
+model$train(iris)
+model$predict(iris[1, ])          
+    </span>
+    </code>
+  </pre>
+</div>
+
+<p>Let us first note that this is a terrible model specification. The training
+function directly encodes `Sepal.Length ~ Sepal.Width` rather than parametrizing
+the dependent and independent variables. Under the hood, all examples of 
+classifiers in the modeling engine build tundra container objects. </p>
+
+<p>The general format for a model container is</p>
+
+<div class="code">
+  <pre>
+    <code class="R">
+    <span class="spacer">
+model <- tundra::tundraContainer$new(
+  keyword          = "lm", # Keyword describing the model
+  train_function   = identity, # training function
+  predict_function = identity, # prediction function
+  munge_procedure  = list(), # A list of mungepieces to apply before
+                             # training / prediction.
+  default_args     = list(), # Default training arguments
+  internal         = list()  # A list for specifying additional attributes, e.g.,
+                             # domain-specific metadata for the model.
+)
+    </span>
+    </code>
+  </pre>
+</div>
+
+<p>Note the last three arguments. By default, tundra containers perform no 
+feature engineering on the data given to the train or predict function.</p>
+
+<p>However, it is possible to specify a list of mungepieces that will 
+effectively make the model object capable of handling arbitrarily messy
+production or validation data during prediction: the munge procedure
+simply gets executed using the predict versions of the mungepieces
+prior to running the predict function.</p>
+
+<h2><a name="engine">Help from the modeling engine</a></h2>
+
+<p>The modeling engine abstracts away the creation of a tundra container
+by following the convention below.</p>
+
+<p>
+<ul><li><b>Classifiers</b>, meaning pairs of train and predict functions on the
+    training data, are specified in the <code class="inline">lib/classifiers</code> directory
+    by defining a <code class="inline">train</code> and 
+    <code class="inline">predict</code> local variable representing
+    the training and prediction function, respectively.</li>
+  <li>Classifiers are <i>parametrized</i> by a list which is given to the
+   second argument of the training function. The value given by
+   the "model" key in the model file is a list specifying the
+   parameters to be passed in to the training function.</li>
+</ul>
+</p>
+
+<p>With these two abstractions in hand, we can cleanly create portable
+model containers that can be used for running validation experiments
+on future distributions of the data or even live in production systems.</p>
+
+<div class="code">
+  <pre>
+    <code class="R">
+    <span class="spacer">
+ 
+    </span>
+    </code>
+  </pre>
+</div>
+
+<h2>Next Steps</h2>
+
+<ul>
+  <li><a href="director.html">Controllers</a></li>
+  <li><a href="testing.html">Testing</a></li>
+  <li><a href="summary.html">Summary and review</a></li>
+</ul>
+
+<code class="inline"></code>
+
+<h2><a name="deflation" style="font-weight: normal">Appendix: Model deflation</a></h2>
+
+<p>R's easy serialization capability seems like a free lunch but there is a dangerous
+trade-off. If you use environments or functions (which implicitly have an environment
+attached) anywhere in your model objects it is possible to capture far more than you
+intended upon serialization.</p>
+
+<p>For example, instead of capturing just the model objects, you might capture most
+of the data in the global environment and store gigabytes of unnecessary serialized
+R objects! This is not a problem in languages like Python or Java because every object
+must have its own serialization (pickling) code.</p>
+
+<p>To relieve this issue, the modeling engine comes with some <a href="https://github.com/syberia/modeling.sy/blob/c0a8e2e85a2bbaa4cfb68e83c28b6495ac363b20/lib/shared/full_deflate.R">simple deflation triggers</a>
+that prune any closures (functions) on the model objects from carrying too much information. Because
+R is such a dynamic language, there is in general no way of identifying what will be needed
+by a given function, but we try our best: we assume the train and predict functions of a
+classifier are <b>pure</b>.</p>
+
+<p>Pure functions do not make use of global variables or variables in
+the parent environment of the function. This rules out helper functions but increases
+stability and serializability. Simply put your helpers in the body of the train or 
+predict functions.</p>
+
+<p>If you find your model objects getting large unexpectedly, carefully examine
+your code and what you are storing in <code class="input">input</code>, or modify
+the <a href="https://github.com/syberia/modeling.sy/blob/master/lib/controllers/classifiers.R#L9">model stage</a> accordingly.</p>
+
+<h2><a name="serializing" style="font-weight: normal">Appendix: Custom Serializers</a></h2>
+
+<p>A lot of R models serialize out-of-the-box, but some models (like 
+<a href="https://github.com/dmlc/xgboost">xgboost</a>) represent their underlying state
+in a C structure which is not natively serializable by R.</p>
+
+<p>For such models, you may have to define additional serialization procedures.
+TODO: Explain how.</p>
