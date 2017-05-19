@@ -91,19 +91,15 @@ list( # R's a LISP, so we represent the modeling process with a list. :)
           </pre>
         </div>
 
-        <p>This incredibly simple example showcases the primary principle behind
-           the Syberia approach to modeling. Instead of separating the modeling
-           process into a collection of scripts, every model constructed in
-           Syberia should take raw production data to a complete ready-to-deploy
-           object in an easily readable short format that describes the
-           most important components of the modeling process.</p>
+        <p>This simple example showcases the primary principle behind
+           the Syberia approach to modeling. Rather than using collections of
+           loosely-organized scripts, Syberia lets you prescribe what should
+           happen in the model construction process, from importing raw production
+           data to delivery a ready-to-deploy object.</p>
 
-        <p>Behind the scenes, Syberia constructs an object that allows you to
-           "roll back" to earlier points in time without repeating previous steps
-           in case something went wrong, such as when you're debugging or testing
-           your feature engineering. Keeping track of temporary variables and re-importing
-           when you made a mistake can be a cumbersome component of a script-driven
-           or notebook-driven workflow.</p>
+        <p>Syberia allows you to "roll back" to earlier points in time without repeating
+           previous steps in case something went wrong, such as when you're debugging or testing
+           your feature engineering.</p>
 
         <p>With Syberia, the approach to modeling is the same as the software
            engineering approach to development: your work should be testable, modular,
