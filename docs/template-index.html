@@ -39,15 +39,22 @@
 
         <h2><a name="example">An example</a></h2>
 
-        <p>Before we get started, let's take a look at what a classifier might
-           look like using the Syberia modeling engine:</p>
+        <p>Before we get started, let's take a look at what [a realistic example model](https://github.com/syberia/examples/blob/master/models/dev/titanic/titanic.R)
+           looks like using the Syberia modeling engine:</p>
         <div class="code">
           <pre>
             <code class="R"><span class="spacer">
+# Some of the constants used here live in the main file:
+# https://github.com/syberia/examples/blob/master/models/dev/titanic/titanic.R
 list( # R's a LISP, so we represent the modeling process with a list. :)
   import = list(
-    # For this simple example, we'll use Kaggle's example Titanic data set.
-    url = "https://raw.githubusercontent.com/haven-jeon/introduction_to_most_usable_pkgs_in_project/master/bicdata/data/titanic.csv"
+    # For this simple example, we'll use Kaggle's example Titanic data set
+    # to build a relatively thorough logistic regression analysis.
+    url = list(
+      "https://raw.githubusercontent.com/haven-jeon/introduction_to_most_usable_pkgs_in_project/master/bicdata/data/titanic.csv",
+      # Treat strings as strings, not factors.
+      stringsAsFactors = FALSE
+    )
   ), # You can use a variety of data import adapters, like csv or AWS's S3.
 
   data = list(
@@ -61,13 +68,46 @@ list( # R's a LISP, so we represent the modeling process with a list. :)
   , "Set factors"          = list(column_transformation(factor), c("sex", "embarked"))
   , "Restore levels"       = list(restore_categorical_variables)
   , "Rename dep_var"       = list(renamer, c("survived" = "dep_var"))
-  ), # Giving a short summary of each step will come in handy later.
 
+    # Parse out a binary feature that indicates if their name has a parenthesis.
+    "Has paren in name"       = list(multi_column_transformation(function(name) grepl("(", fixed = TRUE, name)), "name", "has_paren")
+    # Turn string length of name on ticket into an integer feature.
+   ,"Name length variable"    = list(new_variable, function(name) nchar(name), "name_length")
+   # Parse out title feature: c("mr", "ms", "mrs", "master", "rev", "dr", "other")
+   ,"Formal title"            = list(regex_factor, "name", "title", cases = titles, fixed = fixed_titles)
+   # Parse out ticket type feature: c("pc", "sc", "ca", "sp", "w", "soc", "ston", "line", "paris", "other")
+   ,"Ticket type"             = list(regex_factor, "ticket", "ticket_type", cases = tickets, fixed = fixed_tickets)
+   # Make a new title_vare variable using stats::ave
+   ,"title_fare variable"     = list(new_variable, function(title, fare) { stats::ave(fare, title, FUN = mean) }, "title_fare")
+   # Use a helper from mungebits2 package to define a class_fare feature.
+   ,"class_fare"              = list(multi_column_transformation(function(klass, fare) { stats::ave(fare, klass, FUN = mean) }), c("pclass", "fare"), "class_fare")
+   # Equivalent to using base::transform to derive differences and quotients.
+   ,"Some simple derivations" = list(atransform, alist(fare_diff = fare - title_fare, fare_pct = fare / title_fare, fare_diff_class = fare - class_fare, fare_pct_class = fare / class_fare))
+   # Some more derivations -- see full file in syberia/examples repo.
+   ,"Derived cabin variables" = list(atransform, cabin_derivations)
+   ,"Cabin diff and pct"      = list(atransform, alist(fare_diff_cabin = fare - cabin_fare, fare_pct_cabin = fare / cabin_fare))
+   # One last logical feature because first letter of cabin seems significant.
+   ,"cabin_single_letter"     = list(new_variable, function(cabin_letter) factor(gsub("^(.).*$", "\\1", cabin_letter)), "cabin_single_letter")
+   # Mark sex and embarked features as factors.
+   ,"Set factors"             = list(!factor, c("sex", "embarked"))
+   # Automatically convert our earlier binary feature to a factor.
+   ,"Logical to factor"       = list(!as.factor, is.logical)
+   # Drop all other character features: the juice has been squeezed!
+   ,"Drop character vars"     = list(drop_variables, is.character)
+   # A key idea: this stores the levels under the hood for later production use.
+   ,"Restore levels"          = list(restore_categorical_variables, is.factor)
+   # Finally, the convention is that the dependent is "dep_var".
+   # We could also change this in the model stage below to take "survived" instead.
+   ,"Rename dep_var"          = list(renamer, c("survived" = "dep_var"))
+  ), # Giving a short summary of each step will come in handy later,
+     # and is good documentation!
+
+  # Now let's build an ML model.
   model = list(
       "gbm" # The name of our classifier. This is defined elsewhere.
     , .id_var             = "X"
-    , distribution        = "bernoulli" # And some parameters.
-    , number_of_trees     = 3000        # Here we try a binary classification.
+    , distribution        = "bernoulli" # Here we try a binary classification.
+    , number_of_trees     = 3000        # Pick some parameters.
     , shrinkage_factor    = 0.005
     , depth               = 5
     , min_observations    = 6
@@ -86,12 +126,12 @@ list( # R's a LISP, so we represent the modeling process with a list. :)
 # , file = "~/path/titanic" # Or a file...
                             # Or any other custom export format you define.
   )
-)
+) # And we're done! The model comes to life using the global `run()` helper.
             </span></code>
           </pre>
         </div>
 
-        <p>This simple example showcases the primary principle behind
+        <p>This example showcases the primary principle behind
            the Syberia approach to modeling. Rather than using collections of
            loosely-organized scripts, Syberia lets you prescribe what should
            happen in the model construction process, from importing raw production
