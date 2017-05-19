@@ -34,7 +34,7 @@ a living breathing object, the same way a web browser brings a
 web application alive. We'll start with a stagerunner but in
 the future may end up with much more.</p>
 
-<h2>The Execution Cycle</h2>
+<h2><a name="cycle">The Execution Cycle</a></h2>
 
 <div class="img-right">
   <img src="../../images/model_process.png" title="Model Process" />
@@ -78,7 +78,7 @@ scheduling and debugging but for now let's master stagerunners. (If you
 think hard enough about it, any directed graph can be decomposed into
 purely serial components.)</p>
 
-<h2>A simple stagerunner</h2>
+<h2><a name="simple">A simple stagerunner</a></h2>
 
 <p>Before we jump into the convenient conventions set up by the modeling
 engine that ships with Syberia by default, let's review the basics
@@ -130,7 +130,7 @@ Typically this matters as many feature engineering operations are not
 commutative: dropping correlated features and then imputing may yield
 different results than doing it the other way around.</p>
 
-<h2>More complicated runners</h2>
+<h2><a name="complicated">More complicated runners</a></h2>
 
 <div class="img-right">
   <img src="../../images/achievement-unlocked-template.jpg" title="Achievement unlocked" height="60" />
@@ -242,7 +242,7 @@ r$run() # Note that class(r$context$model) is an lm object.
   </pre>
 </div>
 
-<h2>The modeling engine</h2>
+<h2><a name="engine">The modeling engine</a></h2>
 
 <p>The default Syberia engine provides a lot of syntactic sugar to make the above
 process less painful. In particular, we make the notion of <b>stages</b> primitive
@@ -397,7 +397,7 @@ master the statistics behind data science then you can leave
 the IDE behind and learn the development tools that make software
 engineers so capable and productive. You'll also increase your salary.</p>
 
-<h2>Re-running stages</h2>
+<h2><a name="rerun">Re-running stages</a></h2>
 
 <p>The real power from the stagerunner approach lies in replay capability.
 The standard development cycle for a new model should proceed as follows.</p>
@@ -471,7 +471,7 @@ most recently modified.</p>
 
 <code class="inline"></code>
 
-<h2>The modeling cycle</h2>
+<h2><a name="modeling">The modeling cycle</a></h2>
 
 <p>You now know enough about stagerunners to start being productive. The
 next step is to learn more about how the various stages are parametrized 

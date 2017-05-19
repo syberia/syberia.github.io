@@ -12,7 +12,7 @@ will be identified by the failures in the test suite.</p>
 <p>For those new to test-driven development, we recommend the
 <a href="">section on testing</a> from Hadley's Advanced R book.</p>
 
-<h2>Defining tests</h2>
+<h2><a name="defining">Defining tests</a></h2>
 
 <p>Let's begin with a concrete example. Make sure you are back in
 the example.sy project from earlier sections.</p>
@@ -164,14 +164,14 @@ have learned.</p>
   <li><a href="summary.html">Summary and review</a></li>
 </ul>
 
-<h2>Appendix: Test configuration</h2>
+<h2><a name="configuration">Appendix: Test configuration</a></h2>
 
 <p>Sometimes you may wish to define functions that execute before and 
 after you call <code class="inline">test_project</code>, or before
 and after every individual test. These are called <b>test setup</b>
 and <b>test teardown hooks</b>.
 
-<h2>Appendix: Continuous integration</h2>
+<h2><a name="ci">Appendix: Continuous integration</a></h2>
 
 <p>The practice of continuous integration refers to running the
 test suite in the cloud using some tool like <a href="">Travis</a>
@@ -189,6 +189,7 @@ like a local Jenkins setup may require a different configuration.</p>
     <code class="R"><span class="spacer">
 # Place this in .travis.yml in the root of your Syberia modeling project.
 language: c
+dist: trusty
 sudo: false
 addons:
   apt:

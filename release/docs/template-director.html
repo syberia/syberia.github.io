@@ -21,7 +21,7 @@ pattern in software frameworks that removes some leeway in the organizational st
 in exchange for something incredibly powerful: all R developers working in Syberia projects
 will share common knowledge about how work is organized.</p>
 
-<h2>The modeling engine conventions</h2>
+<h2><a name="conventions">The modeling engine conventions</a></h2>
 
 <p>In particular, the <a href="">modeling engine</a> that currently comes bundled as
 the default engine for structured supervised learning projects such as regression and
@@ -69,7 +69,7 @@ the current in-memory R approach to acting as a distributed command center for m
 of machines, but experimentation on local slices of the data can remain in one of the most
 powerful interactive consoles we know: the R interpreter.</p>
 
-<h2>The base engine</h2>
+<h2><a name="base">The base engine</a></h2>
 
 <p>The above conventions are not exhaustive. Several are inherited from the parent engine
 of the modeling engine: the base engine. The conventions established in the list below are defined by the
@@ -113,7 +113,7 @@ Building on top of the base engine allows for some very powerful meta-convention
 <p>Philosophical asides beside, let's examine how a director object helps us 
 generalize our thinking about R projects with some more concrete examples.</p>
 
-<h2>The most basic director object</h2>
+<h2><a name="basic">The most basic director object</a></h2>
 
 Let us start from the beginning and open a vanilla R session from the terminal:
 <code class="inline">R --vanilla</code>.
@@ -236,7 +236,7 @@ and are pure helper R scripts&mdash;they do not benefit from the preprocessor
 or parser magic in director that we are about to introduce! (This is a frequent
 source of bizarre bugs and stack traces and merits explicit mention.)</p>
 
-<h2>Preprocessors and parsers</h2>
+<h2><a name="preprocessor">Preprocessors and parsers</a></h2>
 
 <p>Continuing with the example from the previous section, let's add some flair
 to our project.</p>
@@ -386,7 +386,7 @@ vapply(project$find("people"), function(p) { as.character(project$resource(p)) }
   </pre>
 </div>
 
-<h2>Additional director functionality</h2>
+<h2><a name="additional">Additional director functionality</a></h2>
 
 <div class="code">
   <pre>

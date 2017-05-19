@@ -5,7 +5,7 @@
     <script type="text/javascript">try { Typekit.load({ async: true }); } catch(e) { }</script>
 
     <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,500" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" media="all" href="../style.css" type="text/css" />
+    <link rel="stylesheet" media="all" href="../stylesheets/main.css" type="text/css" />
     <link rel="stylesheet" media="all" href="../stylesheets/rocco.css" />
     <link rel="stylesheet" media="all" href="../stylesheets/github-markdown.css" />
 
@@ -18,11 +18,11 @@
   <body>
   <div class="backdrop tk-proxima-nova">
     <div class="header">
-      <div class="header-left">Syberia</div>
+      <div class="header-left"><a href="/">Syberia</a></div>
       <div class="header-right">
         <ul>
-          <li><a href="#">Get Started</a></li>
-          <li><a href="#">Docs</a></li>
+          <li><a href="/docs">Get Started</a></li>
+          <li><a href="/docs">Docs</a></li>
         </ul>
       </div>
     </div>
@@ -54,7 +54,7 @@ pattern in software frameworks that removes some leeway in the organizational st
 in exchange for something incredibly powerful: all R developers working in Syberia projects
 will share common knowledge about how work is organized.</p>
 
-<h2>The modeling engine conventions</h2>
+<h2><a name="conventions">The modeling engine conventions</a></h2>
 
 <p>In particular, the <a href="">modeling engine</a> that currently comes bundled as
 the default engine for structured supervised learning projects such as regression and
@@ -102,7 +102,7 @@ the current in-memory R approach to acting as a distributed command center for m
 of machines, but experimentation on local slices of the data can remain in one of the most
 powerful interactive consoles we know: the R interpreter.</p>
 
-<h2>The base engine</h2>
+<h2><a name="base">The base engine</a></h2>
 
 <p>The above conventions are not exhaustive. Several are inherited from the parent engine
 of the modeling engine: the base engine. The conventions established in the list below are defined by the
@@ -146,7 +146,7 @@ Building on top of the base engine allows for some very powerful meta-convention
 <p>Philosophical asides beside, let's examine how a director object helps us 
 generalize our thinking about R projects with some more concrete examples.</p>
 
-<h2>The most basic director object</h2>
+<h2><a name="basic">The most basic director object</a></h2>
 
 Let us start from the beginning and open a vanilla R session from the terminal:
 <code class="inline">R --vanilla</code>.
@@ -269,7 +269,7 @@ and are pure helper R scripts&mdash;they do not benefit from the preprocessor
 or parser magic in director that we are about to introduce! (This is a frequent
 source of bizarre bugs and stack traces and merits explicit mention.)</p>
 
-<h2>Preprocessors and parsers</h2>
+<h2><a name="preprocessor">Preprocessors and parsers</a></h2>
 
 <p>Continuing with the example from the previous section, let's add some flair
 to our project.</p>
@@ -419,7 +419,7 @@ vapply(project$find("people"), function(p) { as.character(project$resource(p)) }
   </pre>
 </div>
 
-<h2>Additional director functionality</h2>
+<h2><a name="additional">Additional director functionality</a></h2>
 
 <div class="code">
   <pre>
@@ -485,7 +485,78 @@ vanilla <code class="inline">base::source</code> function.
         </div>
         <div class="col2">
           <br /> <br /> <br />
-          SIDEBAR TEXT!
+        <ul class="table-of-contents">
+          <li>
+            <a href="/docs">Introduction</a></li>
+            <ul>
+              <li><a href="/docs#example">An example</a></li>
+              <li><a href="/docs#additional_resources">Additional resources</a></li>
+            </ul>
+          <li><a href="/docs/download.html">Download and Setup</a>
+            <ul>
+              <li><a href="/docs/download.html#trouble">Troubleshooting</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/usage.html">Basic Usage</a></li>
+          <li><a href="/docs/101.html">Modeling 101</a>
+            <ul>
+              <li><a href="/docs/101.html#cycle">The Basic Modeling Cycle</a></li>
+              <li><a href="/docs/101.html#stages">The Four Stages</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/mungebits.html">Mungebits</a>
+            <ul>
+              <li><a href="/docs/mungebits.html#basic">The Basic Mungebit</a></li>
+              <li><a href="/docs/mungebits.html#testing">Testing Mungebits</a></li>
+              <li><a href="/docs/mungebits.html#advanced">Advanced Mungebits</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/stagerunner.html">Stagerunner</a>
+            <ul>
+              <li><a href="/docs/stagerunner.html#cycle">The Execution Cycle</a></li>
+              <li><a href="/docs/stagerunner.html#simple">A Simple Stagerunner</a></li>
+              <li><a href="/docs/stagerunner.html#complicated">More Complicated Runners</a></li>
+              <li><a href="/docs/stagerunner.html#engine">The Modeling Engine</a></li>
+              <li><a href="/docs/stagerunner.html#rerun">Re-running Stages</a></li>
+              <li><a href="/docs/stagerunner.html#modeling">The Modeling Cycle</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/tundra.html">Model Objects</a>
+            <ul>
+              <li><a href="/docs/tundra.html#container">The Tundra Container</a></li>
+              <li><a href="/docs/tundra.html#serialization">Serialization of Model Objects</a></li>
+              <li><a href="/docs/tundra.html#construction">Constructing Model Objects</li>
+              <li><a href="/docs/tundra.html#engine">Help From The Modeling Engine</a></li>
+              <li><a href="/docs/tundra.html#deflation">Appendix: Model Deflation</a></li>
+              <li><a href="/docs/tundra.html#serializing">Appendix: Custom Serializers</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/director.html">Managing Large Projects</a>
+            <ul>
+              <li><a href="/docs/director.html#conventions">Modeling Engine Conventions</a></li>
+              <li><a href="/docs/director.html#base">The Base Engine</a></li>
+              <li><a href="/docs/director.html#basic">Basic Director Object</a></li>
+              <li><a href="/docs/director.html#preprocessor">Preprocessors and Parsers</a></li>
+              <li><a href="/docs/director.html#additional">Additional Functionality</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/testing.html">Testing</a>
+            <ul>
+              <li><a href="/docs/testing.html#defining">Defining Tests</a></li>
+              <li><a href="/docs/testing.html#models">Testing Models</a></li>
+              <li><a href="/docs/testing.html#configuration">Test Configuration</a></li>
+              <li><a href="/docs/testing.html#ci">Continuous Integration</a></li>
+            </ul>
+          </li>
+          <li><a href="/docs/summary.html">Summary and Review</a>
+            <ul>
+              <li><a href="/docs/summary.html#modeling">The Modeling Engine</a></li>
+              <li><a href="/docs/summary.html#base">The Base Engine</a></li>
+              <li><a href="/docs/summary.html#grammar">The Modeling Grammar</a></li>
+              <li><a href="/docs/summary.html#mungebits">Mungebits</a></li>
+            </ul>
+          </li>
+        </ul>
         </div>
       </div>
     </div>
