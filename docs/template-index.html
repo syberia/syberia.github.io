@@ -58,6 +58,8 @@ list( # R's a LISP, so we represent the modeling process with a list. :)
     )
   ), # You can use a variety of data import adapters, like csv or AWS's S3.
 
+  # Now that we have downloaded a data set, let's clean it up so it can be fed
+  # into a logistic regression classifier.
   data = list(
     "Factor to character"  = list(column_transformation(as.character), is.factor)
     # One line per feature engineering step seems undue, but it's for a
@@ -121,6 +123,8 @@ list( # R's a LISP, so we represent the modeling process with a list. :)
     , prediction_type     = "response"
   ),
 
+  # Finally, let's export our model so we can use it later to predict on
+  # validation sets or on real-time streaming records on raw production data.
   export = list( # Exporting the model is done in 1 line of code.
     R    = "titanic_model"  # Export the model object to a global variable.
 # , s3   = "path/titanic"   # It's also possible to export to Amazon's S3. 
