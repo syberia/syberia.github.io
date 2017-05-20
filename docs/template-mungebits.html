@@ -48,7 +48,7 @@ when a single data point comes in--otherwise the trained classifier
 will be confused.</p>
 
 <div class="img-right">
-  <img src="../../images/narrow_vs_wide.png" title="Narrow and Wide Transformations" />
+  <img src="../images/narrow_vs_wide.png" title="Narrow and Wide Transformations" />
 </div>
 
 <p>Operations that take one <code class="inline">data.frame</code>
@@ -183,7 +183,7 @@ single rows for new data points. We can grab our mungebit within the
 Syberia session using <code class="inline">resource("lib/mungebits/remove_uncommon_values")</code>.</p>
 
 <p>
-  <img src="../../images/mungebit_example.png" title="Mungebit example" />
+  <img src="../images/mungebit_example.png" title="Mungebit example" />
 </p>
 
 <p>Let's see what happens when we run it on a simple example.</p>
@@ -270,7 +270,7 @@ test_that("it does not replace a common value", {
 </div>
 
 <p style="text-align: center">
-  <img src="../../images/mungebit_test_example.png" title="Mungebit Test Example" />
+  <img src="../images/mungebit_test_example.png" title="Mungebit Test Example" />
 </p>
 
 <p>Looking pretty good! Note we used <code class="inline">stest</code>, a helper
@@ -305,7 +305,7 @@ test_that("it replaces a previously-unseen value", {
 </div>
 
 <p style="text-align: center">
-  <img src="../../images/mungebit_test_failure.png" title="Mungebit Test Failure" />
+  <img src="../images/mungebit_test_failure.png" title="Mungebit Test Failure" />
 </p>
 
 <p>Oh no! Our first <i>test failure</i>. Writing tests is about stepping outside
@@ -355,7 +355,7 @@ predict <- function(dataframe, variables, threshold = 0.01, replacement = "Other
 </div>
 
 <p style="text-align: center">
-  <img src="../../images/mungebit_test_fixed.png" title="Mungebit Test Fixed" />
+  <img src="../images/mungebit_test_fixed.png" title="Mungebit Test Fixed" />
 </p>
 
 <p>The more tests we write, the more <i>coverage</i> we have. You can think of
