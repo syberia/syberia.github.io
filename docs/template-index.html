@@ -1,6 +1,11 @@
-        <h1>Introduction</h1>
+        <br />
+        <div style="font-size: 1.5em; text-align: center;">
+          <p><b>You are never going to waste time janitoring data again!</b></p>
+          <p><b>You can get back to doing real work and actual math.</b></p>
+        </div>
+        <br />
 
-        <p>Let's get you up and running with Syberia!</p>
+        <p>OK, that's my two-line elevator pitch. Let's get you up and running with Syberia!</p>
 
         <p>If you already know what Syberia is and what you can do it with it, feel free to
         skip to the next <a href="#example">subsection</a>. Otherwise, hopefully this
@@ -39,9 +44,57 @@
 
         <h2><a name="example">An example</a></h2>
 
-        <p>Before we get started, let's take a look at what
-        <a href="https://github.com/syberia/examples/blob/master/models/dev/titanic/titanic.R">a realistic example model</a>
-           looks like using the Syberia modeling engine:</p>
+        <p>Before we get started, let's take a look at what a Syberia model file looks like.</p>
+
+        <p>To avoid scaring you off with a real example, let's begin with the 
+        <a target="_blank" href="https://github.com/syberia/example.sy/blob/master/models/dev/example1.R">hello world of data science</a>: predicting the sepal length of flowers in
+        <a target="_blank" href="https://en.wikipedia.org/wiki/Iris_flower_data_set">the iris data set</a> given
+        the sepal width, petal length, petal width, and species type.</p>
+
+        <div class="code">
+          <pre>
+            <code class="R"><span class="spacer">
+# The Hello World program of data science.
+list( # A great example of a useless Syberia model.
+  import = list(R = "iris"), # Load the data from R's global namespace.
+  data   = list(             # Add a primary key and dep_var column.
+    "Make dep var" = list(renamer, c("Sepal.Length" = "dep_var")),
+    "Example var"  = list(example), # Silly example of a custom step that lives elsewhere.
+    "Make ID var"  = list(multi_column_transformation(seq_along), "dep_var", "id")
+  ), 
+  model  = list("lm", .id_var = "id"), # Run a linear regression.
+  export = list(R = "model")           # Make a global R variable called `model`.
+)
+            </span></code>
+          </pre>
+        </div>
+
+        <p>The vanilla method of writing this model in R is one line of code:</p>
+       
+        <div style="text-align: center">
+          <code class="inline">model <- stats::lm(Sepal.Length ~ ., data = iris)</code>
+       </div>
+
+        <p>Noticing this fact is a great way to convince yourself Syberia is useless and
+        blissfully closing the browser tab.</p>
+
+        <div class="img-right">
+          <img src="../images/achievement-unlocked-template.jpg" title="Achievement unlocked" height="60" />
+        </div>
+
+        <p>As with most powerful abstractions, the trivial examples will require a few more lines
+        of boilerplate. Yet a great hidden accomplishment is achieved: the level of complexity
+        becomes fixed for <i>all</i> problems solvable by the abstraction rather than growing
+        linearly or exponentially as the number of features and complex requirements increases.</p>
+
+        <h2><a name="realexample">A real example</a></h2>
+
+        <p>Let's try a real example. In the Kaggle machine learning competition website, 
+        <a target="_blank" href="https://www.kaggle.com/c/titanic">the warm-up predictive analytics challenge</a>
+        is to determine who survived on the Titanic ship given information about the passengers onboard.
+        Typically, a great solution requires several hundred lines of clever code.
+        Using the Syberia modeling engine we condensed such a collection of scripts to
+        <a target="_blank" href="https://github.com/syberia/examples/blob/master/models/dev/titanic/titanic.R">a single file</a>:</p>
         <div class="code">
           <pre>
             <code class="R"><span class="spacer">
@@ -61,54 +114,47 @@ list( # R's a LISP, so we represent the modeling process with a list. :)
   # Now that we have downloaded a data set, let's clean it up so it can be fed
   # into a logistic regression classifier.
   data = list(
-    "Factor to character"  = list(column_transformation(as.character), is.factor)
     # One line per feature engineering step seems undue, but it's for a
     # good cause: commenting out to try with and without a step is trivial,
-    # and as the parametrization grows longer it's a clear indication
-    # you need a new mungebit!
-  , "fare_title"           = list(multi_column_transformation(function(title, fare) { ave(fare, title, FUN = mean) }), c("title", "fare"), "title_fare")
-  , "Name length variable" = list(new_variable, function(name) nchar(name), "name_length")
-  , "Set factors"          = list(column_transformation(factor), c("sex", "embarked"))
-  , "Restore levels"       = list(restore_categorical_variables)
-  , "Rename dep_var"       = list(renamer, c("survived" = "dep_var"))
+    # and as the parametrization grows longer it is a clear indication
+    # you need a new mungebit! Using descriptive keys makes it self-documenting.
 
-    # Parse out a binary feature that indicates if their name has a parenthesis.
     "Has paren in name"       = list(multi_column_transformation(function(name) grepl("(", fixed = TRUE, name)), "name", "has_paren")
-    # Turn string length of name on ticket into an integer feature.
    ,"Name length variable"    = list(new_variable, function(name) nchar(name), "name_length")
-   # Parse out title feature: c("mr", "ms", "mrs", "master", "rev", "dr", "other")
    ,"Formal title"            = list(regex_factor, "name", "title", cases = titles, fixed = fixed_titles)
-   # Parse out ticket type feature: c("pc", "sc", "ca", "sp", "w", "soc", "ston", "line", "paris", "other")
    ,"Ticket type"             = list(regex_factor, "ticket", "ticket_type", cases = tickets, fixed = fixed_tickets)
-   # Make a new title_vare variable using stats::ave
    ,"title_fare variable"     = list(new_variable, function(title, fare) { stats::ave(fare, title, FUN = mean) }, "title_fare")
-   # Use a helper from mungebits2 package to define a class_fare feature.
    ,"class_fare"              = list(multi_column_transformation(function(klass, fare) { stats::ave(fare, klass, FUN = mean) }), c("pclass", "fare"), "class_fare")
-   # Equivalent to using base::transform to derive differences and quotients.
    ,"Some simple derivations" = list(atransform, alist(fare_diff = fare - title_fare, fare_pct = fare / title_fare, fare_diff_class = fare - class_fare, fare_pct_class = fare / class_fare))
-   # Some more derivations -- see full file in syberia/examples repo.
    ,"Derived cabin variables" = list(atransform, cabin_derivations)
    ,"Cabin diff and pct"      = list(atransform, alist(fare_diff_cabin = fare - cabin_fare, fare_pct_cabin = fare / cabin_fare))
-   # One last logical feature because first letter of cabin seems significant.
    ,"cabin_single_letter"     = list(new_variable, function(cabin_letter) factor(gsub("^(.).*$", "\\1", cabin_letter)), "cabin_single_letter")
-   # Mark sex and embarked features as factors.
-   ,"Set factors"             = list(!factor, c("sex", "embarked"))
-   # Automatically convert our earlier binary feature to a factor.
    ,"Logical to factor"       = list(!as.factor, is.logical)
-   # Drop all other character features: the juice has been squeezed!
    ,"Drop character vars"     = list(drop_variables, is.character)
-   # A key idea: this stores the levels under the hood for later production use.
    ,"Restore levels"          = list(restore_categorical_variables, is.factor)
-   # Finally, the convention is that the dependent is "dep_var".
-   # We could also change this in the model stage below to take "survived" instead.
    ,"Rename dep_var"          = list(renamer, c("survived" = "dep_var"))
-  ), # Giving a short summary of each step will come in handy later,
-     # and is good documentation!
+
+    # English please! Let's translate each step to a vague description:
+    #
+    # Parse out a binary feature that indicates if their name has a parenthesis.
+    # Turn string length of name on ticket into an integer feature.
+    # Parse out title feature: c("mr", "ms", "mrs", "master", "rev", "dr", "other")
+    # Parse out ticket type feature: c("pc", "sc", "ca", "sp", "w", "soc", "ston", "line", "paris", "other")
+    # Make a new title_vare variable using stats::ave
+    # Use a helper from mungebits2 package to define a class_fare feature.
+    # Use base::transform to derive differences and quotients.
+    # Run some more derivations -- see full file in the syberia/examples repo.
+    # Add one last logical feature because first letter of cabin seems significant.
+    # Automatically convert our earlier binary feature to a factor.
+    # Drop all other character features: the juice has been squeezed!
+    # Add a key idea: store the categorical levels under the hood for later production use.
+    # Finally, the convention for now is that the dependent variable is "dep_var".
+  ),
 
   # Now let's build an ML model.
   model = list(
       "gbm" # The name of our classifier. This is defined elsewhere.
-    , .id_var             = "X"
+    , .id_var             = "X"         # The URL adapter gave each row a primary key "X".
     , distribution        = "bernoulli" # Here we try a binary classification.
     , number_of_trees     = 3000        # Pick some parameters.
     , shrinkage_factor    = 0.005
@@ -124,7 +170,13 @@ list( # R's a LISP, so we represent the modeling process with a list. :)
   ),
 
   # Finally, let's export our model so we can use it later to predict on
-  # validation sets or on real-time streaming records on raw production data.
+  # validation sets when we need to make a powerpoint for our boss on the
+  # latest month of perfomance data. Or if we want to get it published.
+  # Or if we want to win the Kaggle competition. Or if we want to run it on
+  # billions of predictions in batch mode or in a stored SQL procedure.
+  # 
+  # In more advanced uses, the object is also already "productionized":
+  # serializable and ready-to-go for live production systems on raw, messy data streams.
   export = list( # Exporting the model is done in 1 line of code.
     R    = "titanic_model"  # Export the model object to a global variable.
 # , s3   = "path/titanic"   # It's also possible to export to Amazon's S3. 
